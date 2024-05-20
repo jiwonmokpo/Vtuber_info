@@ -6,9 +6,49 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+
+  const handleUsernameChange = (e) => {
+    setUsername(e.target.value);
+    setError('');
+  };
+
+  const handleUsernameBlur = async () => {
+    if (!username) return;
+    setIsCheckingUsername(true);
+    try {
+      const response = await axios.get(`http://localhost:5000/check-username?username=${username}`);
+      if (!response.data.available) {
+        setError('이미 사용 중인 아이디입니다.');
+      }
+    } catch (error) {
+      console.error('Error while checking username:', error);
+      setError('아이디 확인 중 오류가 발생했습니다.');
+    }
+    setIsCheckingUsername(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!username || !password || !email) {
+      setError('모든 필드를 입력해주세요.');
+      return;
+    }
+    
+    // 아이디 중복 확인 요청
+    try {
+      const response = await axios.get(`http://localhost:5000/check-username?username=${username}`);
+      if (!response.data.available) {
+        setError('이미 사용 중인 아이디입니다.');
+        return; // 중복된 아이디인 경우 회원가입 중단
+      }
+    } catch (error) {
+      console.error('Error while checking username:', error);
+      setError('아이디 확인 중 오류가 발생했습니다.');
+      return;
+    }
+
+    // 중복이 아닌 경우 회원가입 요청
     try {
       const response = await axios.post('http://localhost:5000/register', {
         username,
@@ -18,7 +58,7 @@ const Register = () => {
       alert(response.data);
     } catch (error) {
       console.error('There was an error!', error);
-      setError(error.response?.data?.details || 'There was an error registering the user.');
+      setError(error.response?.data?.details || '사용자 등록 중 오류가 발생했습니다.');
     }
   };
 
@@ -28,7 +68,13 @@ const Register = () => {
       <form onSubmit={handleSubmit}>
         <div>
           <label>Username:</label>
-          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} />
+          <input
+            type="text"
+            value={username}
+            onChange={handleUsernameChange}
+            onBlur={handleUsernameBlur}
+          />
+          {isCheckingUsername && <span>확인 중...</span>}
         </div>
         <div>
           <label>Password:</label>
