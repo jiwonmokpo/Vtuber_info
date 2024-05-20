@@ -5,6 +5,8 @@ const cors = require('cors');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const session = require('express-session');
+const postsRouter = require('./routes/posts');
+
 require('dotenv').config();
 
 const app = express();
