@@ -34,21 +34,7 @@ const Register = () => {
       setError('모든 필드를 입력해주세요.');
       return;
     }
-    
-    // 아이디 중복 확인 요청
-    try {
-      const response = await axios.get(`http://localhost:5000/check-username?username=${username}`);
-      if (!response.data.available) {
-        setError('이미 사용 중인 아이디입니다.');
-        return; // 중복된 아이디인 경우 회원가입 중단
-      }
-    } catch (error) {
-      console.error('Error while checking username:', error);
-      setError('아이디 확인 중 오류가 발생했습니다.');
-      return;
-    }
 
-    // 중복이 아닌 경우 회원가입 요청
     try {
       const response = await axios.post('http://localhost:5000/register', {
         username,
@@ -71,18 +57,26 @@ const Register = () => {
           <input
             type="text"
             value={username}
-            onChange={handleUsernameChange}
+            o onChange={handleUsernameChange}
             onBlur={handleUsernameBlur}
           />
           {isCheckingUsername && <span>확인 중...</span>}
         </div>
         <div>
           <label>Password:</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
         </div>
         <div>
           <label>Email:</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </div>
         <button type="submit">회원가입</button>
       </form>
