@@ -1,10 +1,12 @@
 import React, { useState, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../App';
+import { Navigate } from 'react-router-dom';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [redirect, setRedirect] = useState(false);
   const { setAuth } = useContext(AuthContext);
 
   const handleSubmit = async (e) => {
@@ -12,10 +14,15 @@ const Login = () => {
     try {
       const response = await axios.post('http://localhost:5000/login', { username, password });
       setAuth({ loggedIn: true, user: response.data });
+      setRedirect(true);
     } catch (error) {
       console.error('Login error:', error);
     }
   };
+
+  if (redirect) {
+    return <Navigate to="/" replace={true} />; // Navigate로 리디렉션
+  }
 
   return (
     <div>
