@@ -13,7 +13,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/login', { username, password });
+      const response = await axios.post('http://localhost:5000/login', { username, password }, { withCredentials: true });
       if (response.status === 200) { // 서버로부터 성공 응답을 받았을 때
         setAuth({ loggedIn: true, user: response.data });
         setRedirect(true);

@@ -5,11 +5,15 @@ const cors = require('cors');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const session = require('express-session');
-
 require('dotenv').config();
 
 const app = express();
 const port = 5000;
+
+app.use((req, res, next) => {
+  console.log('Session:', req.session);
+  next();
+});
 
 app.use(bodyParser.json());
 app.use(cors({
@@ -21,7 +25,7 @@ app.use(cors({
 app.use(session({
   secret: process.env.SESSION_SECRET || 'secret',
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false, // 미인증 세션은 저장하지 않도록 설정
   cookie: { secure: false } // In production, set to true if using https
 }));
 
@@ -66,6 +70,15 @@ const verifyPassword = (password, storedHash) => {
 // 이메일 인증 링크 생성 함수
 const generateEmailToken = (username) => {
   return crypto.createHash('sha256').update(username + process.env.SECRET_KEY).digest('hex');
+};
+
+// 인증 미들웨어
+const authenticate = (req, res, next) => {
+  if (req.session.user) {
+    next();
+  } else {
+    res.status(401).json({ error: 'Unauthorized' });
+  }
 };
 
 // 회원가입 엔드포인트
@@ -161,7 +174,7 @@ app.post('/login', async (req, res) => {
       if (verifyPassword(password, dbPassword)) {
         if (emailCheck === 1) {
           // 로그인 성공
-          req.session.username = dbUsername; // 세션 설정
+          req.session.user = { username: dbUsername, email: dbEmail }; // 세션 설정
           res.status(200).json({ message: '로그인 성공', username: dbUsername, email: dbEmail });
         } else {
           res.status(401).send('이메일 인증이 완료되지 않았습니다.');
@@ -207,6 +220,83 @@ app.get('/check-username', async (req, res) => {
       error: 'Error checking username availability',
       details: err.message
     });
+  }
+});
+
+// 사용자 인증 상태 확인 엔드포인트
+app.get('/check-auth', (req, res) => {
+  if (req.session.user) {
+    res.status(200).json({ authenticated: true, user: req.session.user });
+  } else {
+    res.status(200).json({ authenticated: false });
+  }
+});
+
+// 게시글 목록 조회 엔드포인트
+app.get('/posts', async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = 10;
+  const offset = (page - 1) * limit;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const result = await connection.execute(
+      `SELECT id, username, title, content, created_at 
+       FROM board 
+       WHERE deletecheck = 1 
+       ORDER BY created_at DESC 
+       OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY`,
+      { offset, limit }
+    );
+    res.json(result.rows);
+    await connection.close();
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Error fetching posts' });
+  }
+});
+
+// 게시글 작성 엔드포인트
+app.post('/posts', authenticate, async (req, res) => {
+  const { title, content } = req.body;
+  const username = req.session.user.username;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    await connection.execute(
+      `INSERT INTO board (username, title, content) VALUES (:username, :title, :content)`,
+      { username, title, content }
+    );
+    res.status(201).json({ message: 'Post created successfully' });
+    await connection.close();
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Error creating post' });
+  }
+});
+
+// 게시글 삭제 엔드포인트
+app.delete('/posts/:id', authenticate, async (req, res) => {
+  const postId = req.params.id;
+  const username = req.session.user.username;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const result = await connection.execute(
+      `UPDATE board SET deletecheck = 0 WHERE id = :id AND username = :username`,
+      { id: postId, username }
+    );
+
+    if (result.rowsAffected === 0) {
+      res.status(403).json({ error: 'You can only delete your own posts' });
+    } else {
+      res.status(200).json({ message: 'Post deleted successfully' });
+    }
+
+    await connection.close();
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Error deleting post' });
   }
 });
 
