@@ -1,10 +1,10 @@
 import React, { createContext, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
-import Home from './pages/Home';
-import Board from './pages/Board';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import MyPage from './pages/MyPage';
+import Home from './userpage/Home';
+import Board from './board/Board';
+import Login from './userpage/Login';
+import Register from './userpage/Register';
+import MyPage from './userpage/MyPage';
 import './App.css';
 
 export const AuthContext = createContext();
