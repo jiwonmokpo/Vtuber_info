@@ -10,11 +10,6 @@ require('dotenv').config();
 const app = express();
 const port = 5000;
 
-app.use((req, res, next) => {
-  console.log('Session:', req.session);
-  next();
-});
-
 app.use(bodyParser.json());
 app.use(cors({
   origin: 'http://localhost:3000',
@@ -25,7 +20,7 @@ app.use(cors({
 app.use(session({
   secret: process.env.SESSION_SECRET || 'secret',
   resave: false,
-  saveUninitialized: false, // 미인증 세션은 저장하지 않도록 설정
+  saveUninitialized: false,
   cookie: { secure: false } // In production, set to true if using https
 }));
 
@@ -81,7 +76,27 @@ const authenticate = (req, res, next) => {
   }
 };
 
-// 회원가입 엔드포인트
+// 유틸리티 함수: CLOB 데이터를 읽어 문자열로 변환
+const readClob = async (clob) => {
+  return new Promise((resolve, reject) => {
+    let clobData = '';
+    clob.setEncoding('utf8');
+
+    clob.on('data', (chunk) => {
+      clobData += chunk;
+    });
+
+    clob.on('end', () => {
+      resolve(clobData);
+    });
+
+    clob.on('error', (err) => {
+      reject(err);
+    });
+  });
+};
+
+// 회원가입
 app.post('/register', async (req, res) => {
   const { username, password, email } = req.body;
 
@@ -130,7 +145,7 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// 이메일 인증 엔드포인트
+// 이메일 인증
 app.get('/verify-email', async (req, res) => {
   const { username, token } = req.query;
 
@@ -158,7 +173,7 @@ app.get('/verify-email', async (req, res) => {
   }
 });
 
-// 로그인 엔드포인트
+// 로그인
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
@@ -173,7 +188,6 @@ app.post('/login', async (req, res) => {
       const [dbUsername, dbPassword, dbEmail, emailCheck] = result.rows[0];
       if (verifyPassword(password, dbPassword)) {
         if (emailCheck === 1) {
-          // 로그인 성공
           req.session.user = { username: dbUsername, email: dbEmail }; // 세션 설정
           res.status(200).json({ message: '로그인 성공', username: dbUsername, email: dbEmail });
         } else {
@@ -196,7 +210,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// 아이디 중복 확인 엔드포인트
+// 아이디 중복 확인
 app.get('/check-username', async (req, res) => {
   const { username } = req.query;
 
@@ -223,7 +237,7 @@ app.get('/check-username', async (req, res) => {
   }
 });
 
-// 사용자 인증 상태 확인 엔드포인트
+// 사용자 인증 상태 확인
 app.get('/check-auth', (req, res) => {
   if (req.session.user) {
     res.status(200).json({ authenticated: true, user: req.session.user });
@@ -232,7 +246,7 @@ app.get('/check-auth', (req, res) => {
   }
 });
 
-// 게시글 목록 조회 엔드포인트
+// 게시글 목록 조회
 app.get('/posts', async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = 10;
@@ -248,15 +262,28 @@ app.get('/posts', async (req, res) => {
        OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY`,
       { offset, limit }
     );
-    res.json(result.rows);
+
+    // 결과 객체를 순환 참조가 없는 평범한 객체로 변환
+    const posts = await Promise.all(result.rows.map(async (row) => {
+      const content = await readClob(row[3]);
+      return {
+        id: row[0],
+        username: row[1],
+        title: row[2],
+        content,
+        created_at: row[4]
+      };
+    }));
+
+    res.json(posts);
     await connection.close();
   } catch (err) {
-    console.error('Database error:', err);
-    res.status(500).json({ error: 'Error fetching posts' });
+    console.error('Database error:', err.message);
+    res.status(500).json({ error: 'Error fetching posts', details: err.message });
   }
 });
 
-// 게시글 작성 엔드포인트
+// 게시글 작성
 app.post('/posts', authenticate, async (req, res) => {
   const { title, content } = req.body;
   const username = req.session.user.username;
@@ -275,7 +302,7 @@ app.post('/posts', authenticate, async (req, res) => {
   }
 });
 
-// 게시글 삭제 엔드포인트
+// 게시글 삭제
 app.delete('/posts/:id', authenticate, async (req, res) => {
   const postId = req.params.id;
   const username = req.session.user.username;

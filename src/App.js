@@ -1,6 +1,6 @@
 // src/App.js
 import React, { createContext, useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, Link, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import axios from 'axios';
 import Home from './userpage/Home';
 import Login from './userpage/Login';
@@ -36,12 +36,10 @@ function App() {
     <AuthContext.Provider value={{ auth, setAuth }}>
       <Router>
         <div className="App">
-          <nav className="navbar">
-            <div className="navbar-left">
+          <aside className="sidebar">
+            <nav className="nav">
               <Link to="/">홈</Link>
               <Link to="/board">게시판</Link>
-            </div>
-            <div className="navbar-right">
               {auth.loggedIn ? (
                 <>
                   <Link to="/mypage">마이페이지</Link>
@@ -54,16 +52,28 @@ function App() {
                   <Link to="/register">회원가입</Link>
                 </>
               )}
-            </div>
-          </nav>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/board" element={<Board />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/mypage" element={<MyPage />} />
-            <Route path="/write" element={<WritePost />} /> {/* WritePost 컴포넌트 라우트 */}
-          </Routes>
+            </nav>
+          </aside>
+          <div className="main-content">
+            <header className="header">
+              {auth.loggedIn && (
+                <div className="user-info">
+                  <img src="user-profile-image-url" alt="User" />
+                  <span className="username">{auth.user.username}</span>
+                </div>
+              )}
+            </header>
+            <main>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/board" element={<Board />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/mypage" element={<MyPage />} />
+                <Route path="/write" element={<WritePost />} /> {/* WritePost 컴포넌트 라우트 */}
+              </Routes>
+            </main>
+          </div>
         </div>
       </Router>
     </AuthContext.Provider>

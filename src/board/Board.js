@@ -10,18 +10,19 @@ const Board = () => {
   const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
+    setPosts([]);
     fetchPosts();
   }, [page]);
-
+  
   const fetchPosts = async () => {
     try {
       const response = await axios.get(`http://localhost:5000/posts?page=${page}`);
       if (response.data.length < 10) {
         setHasMore(false);
       }
-      setPosts((prevPosts) => [...prevPosts, ...response.data]);
+      setPosts(response.data);
     } catch (error) {
-      console.error('Error fetching posts:', error);
+      console.error('Error fetching posts:', error.response ? error.response.data : error.message);
     }
   };
 
@@ -30,7 +31,7 @@ const Board = () => {
       await axios.delete(`http://localhost:5000/posts/${postId}`, { withCredentials: true });
       setPosts(posts.filter(post => post.id !== postId));
     } catch (error) {
-      console.error('Error deleting post:', error);
+      console.error('Error deleting post:', error.response ? error.response.data : error.message);
     }
   };
 
