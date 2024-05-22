@@ -10,19 +10,24 @@ const Board = () => {
   const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
-    setPosts([]);
     fetchPosts();
   }, [page]);
-  
+
   const fetchPosts = async () => {
     try {
       const response = await axios.get(`http://localhost:5000/posts?page=${page}`);
       if (response.data.length < 10) {
         setHasMore(false);
       }
-      setPosts(response.data);
+      setPosts((prevPosts) => {
+        // 중복된 id를 가진 게시글을 제거하고 새로운 게시글을 추가합니다.
+        const newPosts = response.data.filter(
+          (newPost) => !prevPosts.some((post) => post.id === newPost.id)
+        );
+        return [...prevPosts, ...newPosts];
+      });
     } catch (error) {
-      console.error('Error fetching posts:', error.response ? error.response.data : error.message);
+      console.error('Error fetching posts:', error);
     }
   };
 
@@ -31,7 +36,7 @@ const Board = () => {
       await axios.delete(`http://localhost:5000/posts/${postId}`, { withCredentials: true });
       setPosts(posts.filter(post => post.id !== postId));
     } catch (error) {
-      console.error('Error deleting post:', error.response ? error.response.data : error.message);
+      console.error('Error deleting post:', error);
     }
   };
 
@@ -41,7 +46,9 @@ const Board = () => {
       <div>
         {posts.map((post) => (
           <div key={post.id} className="post">
-            <h2>{post.title}</h2>
+            <h2>
+              <Link to={`/posts/${post.id}`}>{post.title}</Link>
+            </h2>
             <p>{post.content}</p>
             <p>작성자: {post.username}</p>
             <p>작성일: {new Date(post.created_at).toLocaleString()}</p>

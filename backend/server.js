@@ -77,24 +77,35 @@ const authenticate = (req, res, next) => {
 };
 
 // 유틸리티 함수: CLOB 데이터를 읽어 문자열로 변환
-const readClob = async (clob) => {
+async function readClob(clob) {
   return new Promise((resolve, reject) => {
-    let clobData = '';
+    if (clob === null) {
+      resolve(null);
+      return;
+    }
+    let data = '';
     clob.setEncoding('utf8');
-
-    clob.on('data', (chunk) => {
-      clobData += chunk;
+    clob.on('data', chunk => {
+      data += chunk;
     });
-
     clob.on('end', () => {
-      resolve(clobData);
+      resolve(data);
     });
-
-    clob.on('error', (err) => {
+    clob.on('error', err => {
       reject(err);
     });
   });
-};
+}
+
+function toPlainObject(result) {
+  return result.rows.map(row => {
+    let obj = {};
+    result.metaData.forEach((meta, i) => {
+      obj[meta.name.toLowerCase()] = row[i];
+    });
+    return obj;
+  });
+}
 
 // 회원가입
 app.post('/register', async (req, res) => {
@@ -255,7 +266,7 @@ app.get('/posts', async (req, res) => {
   try {
     const connection = await oracledb.getConnection(dbConfig);
     const result = await connection.execute(
-      `SELECT id, username, title, content, created_at 
+      `SELECT id, username, title, content, created_at, views, likes 
        FROM board 
        WHERE deletecheck = 1 
        ORDER BY created_at DESC 
@@ -271,7 +282,9 @@ app.get('/posts', async (req, res) => {
         username: row[1],
         title: row[2],
         content,
-        created_at: row[4]
+        created_at: row[4],
+        views: row[5],
+        likes: row[6]
       };
     }));
 
@@ -280,6 +293,136 @@ app.get('/posts', async (req, res) => {
   } catch (err) {
     console.error('Database error:', err.message);
     res.status(500).json({ error: 'Error fetching posts', details: err.message });
+  }
+});
+
+// 게시글 상세 조회 및 조회수 증가
+app.get('/posts/:id', async (req, res) => {
+  const postId = req.params.id;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+
+    const result = await connection.execute(
+      `SELECT id, username, title, content, created_at, views, likes 
+       FROM board 
+       WHERE id = :id`,
+      { id: postId }
+    );
+
+    const post = result.rows[0];
+
+    res.json({
+      id: post[0],
+      username: post[1],
+      title: post[2],
+      content: await readClob(post[3]),
+      created_at: post[4],
+      views: post[5],
+      likes: post[6]
+    });
+
+    // 조회수 증가를 여기서 하지 않음
+
+    await connection.close();
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Error fetching post', details: err.message });
+  }
+});
+
+// 조회수 증가 (분리된 엔드포인트)
+app.post('/posts/:id/increment-views', async (req, res) => {
+  const postId = req.params.id;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+
+    // 조회수 증가
+    await connection.execute(
+      `UPDATE board SET views = views + 1 WHERE id = :id`,
+      { id: postId }
+    );
+
+    res.status(200).json({ message: 'Views incremented successfully' });
+    await connection.close();
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Error incrementing views', details: err.message });
+  }
+});
+
+// 추천수 증가
+app.post('/posts/:id/like', authenticate, async (req, res) => {
+  const postId = req.params.id;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+
+    // 추천수 증가
+    await connection.execute(
+      `UPDATE board SET likes = likes + 1 WHERE id = :id`,
+      { id: postId }
+    );
+
+    res.status(200).json({ message: 'Liked successfully' });
+    await connection.close();
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Error liking post', details: err.message });
+  }
+});
+
+// 댓글 작성
+app.post('/posts/:id/comments', authenticate, async (req, res) => {
+  const postId = req.params.id;
+  const username = req.session.user.username; // userId를 username으로 변경
+  const { content, parentId } = req.body;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+
+    const binds = {
+      post_id: postId,
+      user_id: username,
+      content,
+      parent_id: parentId ? parseInt(parentId, 10) : null
+    };
+
+    await connection.execute(
+      `INSERT INTO comments (post_id, user_id, content, parent_id) VALUES (:post_id, :user_id, :content, :parent_id)`,
+      binds
+    );
+
+    res.status(201).json({ message: 'Comment added successfully' });
+    await connection.close();
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Error adding comment', details: err.message });
+  }
+});
+
+// 댓글 조회
+app.get('/posts/:id/comments', async (req, res) => {
+  const postId = req.params.id;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const result = await connection.execute(
+      `SELECT id, user_id, content, created_at, parent_id 
+       FROM comments 
+       WHERE post_id = :post_id 
+       ORDER BY created_at ASC`,
+      { post_id: postId }
+    );
+
+    const comments = toPlainObject(result);
+
+    res.json(comments);
+    await connection.close();
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Error fetching comments', details: err.message });
   }
 });
 
@@ -304,7 +447,7 @@ app.post('/posts', authenticate, async (req, res) => {
 
 // 게시글 삭제
 app.delete('/posts/:id', authenticate, async (req, res) => {
-  const postId = req.params.id;
+  const postId = parseInt(req.params.id, 10);
   const username = req.session.user.username;
 
   try {
@@ -323,7 +466,7 @@ app.delete('/posts/:id', authenticate, async (req, res) => {
     await connection.close();
   } catch (err) {
     console.error('Database error:', err);
-    res.status(500).json({ error: 'Error deleting post' });
+    res.status(500).json({ error: 'Error deleting post', details: err.message });
   }
 });
 

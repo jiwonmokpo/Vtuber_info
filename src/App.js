@@ -1,4 +1,3 @@
-// src/App.js
 import React, { createContext, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import axios from 'axios';
@@ -8,6 +7,7 @@ import Register from './userpage/Register';
 import MyPage from './userpage/MyPage';
 import Board from './board/Board';
 import WritePost from './board/WritePost';
+import PostDetail from './board/PostDetail'; // 게시글 상세 페이지 추가
 import './App.css';
 
 export const AuthContext = createContext();
@@ -71,6 +71,7 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/mypage" element={<MyPage />} />
                 <Route path="/write" element={<WritePost />} /> {/* WritePost 컴포넌트 라우트 */}
+                <Route path="/posts/:id" element={<PostDetail />} /> {/* PostDetail 컴포넌트 라우트 */}
               </Routes>
             </main>
           </div>
