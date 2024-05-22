@@ -9,8 +9,10 @@ const PostDetail = () => {
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
+  const [replyComment, setReplyComment] = useState({});
 
   useEffect(() => {
+    console.log('useEffect triggered'); // 디버깅을 위해 추가
     fetchPost();
     fetchComments();
     incrementViews(); // 첫 렌더링 시 조회수 증가
@@ -36,17 +38,20 @@ const PostDetail = () => {
   const fetchComments = async () => {
     try {
       const response = await axios.get(`http://localhost:5000/posts/${id}/comments`);
+      console.log('Fetched comments:', response.data); // 디버깅 메시지 추가
       setComments(response.data);
     } catch (error) {
       console.error('Error fetching comments:', error);
     }
   };
 
-  const handleCommentSubmit = async (e) => {
+  const handleCommentSubmit = async (e, parentId = null) => {
     e.preventDefault();
+    const content = parentId ? replyComment[parentId] : newComment;
     try {
-      await axios.post(`http://localhost:5000/posts/${id}/comments`, { content: newComment }, { withCredentials: true });
+      await axios.post(`http://localhost:5000/posts/${id}/comments`, { content, parentId }, { withCredentials: true });
       setNewComment('');
+      setReplyComment({ ...replyComment, [parentId]: '' });
       fetchComments(); // Refresh comments after submission
     } catch (error) {
       console.error('Error adding comment:', error.response ? error.response.data : error.message);
@@ -61,6 +66,14 @@ const PostDetail = () => {
     } catch (error) {
       console.error('Error liking post:', error);
     }
+  };
+
+  const toggleReply = (commentId) => {
+    setReplyComment({ ...replyComment, [commentId]: '' });
+  };
+
+  const handleReplyChange = (e, commentId) => {
+    setReplyComment({ ...replyComment, [commentId]: e.target.value });
   };
 
   return (
@@ -80,17 +93,30 @@ const PostDetail = () => {
       <div>
         <h2>댓글</h2>
         {comments.map((comment) => (
-          <div key={comment.id}>
+          <div key={comment.id} style={{ marginLeft: comment.parentId ? '20px' : '0px' }}>
             <p>{comment.content}</p>
             <p>작성자: {comment.userId}</p>
             <p>작성일: {new Date(comment.createdAt).toLocaleString()}</p>
+            {auth.loggedIn && (
+              <button onClick={() => toggleReply(comment.id)}>답글쓰기</button>
+            )}
+            {replyComment.hasOwnProperty(comment.id) && (
+              <form onSubmit={(e) => handleCommentSubmit(e, comment.id)}>
+                <textarea
+                  value={replyComment[comment.id]}
+                  onChange={(e) => handleReplyChange(e, comment.id)}
+                  placeholder="답글을 입력하세요"
+                ></textarea>
+                <button type="submit">답글 작성</button>
+              </form>
+            )}
           </div>
         ))}
       </div>
 
       {auth.loggedIn && (
         <div>
-          <form onSubmit={handleCommentSubmit}>
+          <form onSubmit={(e) => handleCommentSubmit(e)}>
             <textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}

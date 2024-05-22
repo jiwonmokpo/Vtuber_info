@@ -97,16 +97,6 @@ async function readClob(clob) {
   });
 }
 
-function toPlainObject(result) {
-  return result.rows.map(row => {
-    let obj = {};
-    result.metaData.forEach((meta, i) => {
-      obj[meta.name.toLowerCase()] = row[i];
-    });
-    return obj;
-  });
-}
-
 // 회원가입
 app.post('/register', async (req, res) => {
   const { username, password, email } = req.body;
@@ -296,7 +286,7 @@ app.get('/posts', async (req, res) => {
   }
 });
 
-// 게시글 상세 조회 및 조회수 증가
+// 게시글 상세 조회
 app.get('/posts/:id', async (req, res) => {
   const postId = req.params.id;
 
@@ -322,8 +312,6 @@ app.get('/posts/:id', async (req, res) => {
       likes: post[6]
     });
 
-    // 조회수 증가를 여기서 하지 않음
-
     await connection.close();
   } catch (err) {
     console.error('Database error:', err);
@@ -331,7 +319,7 @@ app.get('/posts/:id', async (req, res) => {
   }
 });
 
-// 조회수 증가 (분리된 엔드포인트)
+// 조회수 증가
 app.post('/posts/:id/increment-views', async (req, res) => {
   const postId = req.params.id;
 
@@ -416,7 +404,19 @@ app.get('/posts/:id/comments', async (req, res) => {
       { post_id: postId }
     );
 
-    const comments = toPlainObject(result);
+    // 디버깅을 위해 쿼리 결과를 로그로 출력
+    console.log('Query result:', result);
+
+    const comments = await Promise.all(result.rows.map(async (row) => {
+      const content = await readClob(row[2]);
+      return {
+        id: row[0],
+        userId: row[1],
+        content,
+        createdAt: row[3],
+        parentId: row[4]
+      };
+    }));
 
     res.json(comments);
     await connection.close();
