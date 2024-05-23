@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
+import '../css/WritePost.css';
 
 const WritePost = () => {
   const { auth } = useContext(AuthContext);
@@ -20,7 +21,7 @@ const WritePost = () => {
   };
 
   return (
-    <div>
+    <div className="write-post-container">
       <h1>글쓰기</h1>
       <form onSubmit={handleSubmit}>
         <div>

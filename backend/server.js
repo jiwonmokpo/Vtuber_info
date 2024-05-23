@@ -340,14 +340,33 @@ app.post('/posts/:id/increment-views', async (req, res) => {
   }
 });
 
-// 추천수 증가
+// 좋아요 증가
 app.post('/posts/:id/like', authenticate, async (req, res) => {
-  const postId = req.params.id;
+  const postId = parseInt(req.params.id, 10);
+  const username = req.session.user.username;
 
   try {
     const connection = await oracledb.getConnection(dbConfig);
 
-    // 추천수 증가
+    // 사용자가 이미 좋아요를 눌렀는지 확인
+    const likeCheckResult = await connection.execute(
+      `SELECT * FROM post_likes WHERE post_id = :post_id AND user_id = :user_id`,
+      { post_id: postId, user_id: username }
+    );
+
+    if (likeCheckResult.rows.length > 0) {
+      res.status(400).json({ error: '이미 좋아요를 누른 게시글입니다.' });
+      await connection.close();
+      return;
+    }
+
+    // 좋아요 추가
+    await connection.execute(
+      `INSERT INTO post_likes (post_id, user_id) VALUES (:post_id, :user_id)`,
+      { post_id: postId, user_id: username }
+    );
+
+    // 게시글의 좋아요 수 증가
     await connection.execute(
       `UPDATE board SET likes = likes + 1 WHERE id = :id`,
       { id: postId }
@@ -361,10 +380,11 @@ app.post('/posts/:id/like', authenticate, async (req, res) => {
   }
 });
 
+
 // 댓글 작성
 app.post('/posts/:id/comments', authenticate, async (req, res) => {
   const postId = req.params.id;
-  const username = req.session.user.username; // userId를 username으로 변경
+  const username = req.session.user.username;
   const { content, parentId } = req.body;
 
   try {
@@ -404,9 +424,6 @@ app.get('/posts/:id/comments', async (req, res) => {
       { post_id: postId }
     );
 
-    // 디버깅을 위해 쿼리 결과를 로그로 출력
-    console.log('Query result:', result);
-
     const comments = await Promise.all(result.rows.map(async (row) => {
       const content = await readClob(row[2]);
       return {
@@ -444,6 +461,31 @@ app.post('/posts', authenticate, async (req, res) => {
     res.status(500).json({ error: 'Error creating post' });
   }
 });
+// 게시글 수정
+app.put('/posts/:id', authenticate, async (req, res) => {
+  const postId = parseInt(req.params.id, 10);
+  const { title, content } = req.body;
+  const username = req.session.user.username;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const result = await connection.execute(
+      `UPDATE board SET title = :title, content = :content WHERE id = :id AND username = :username`,
+      { title, content, id: postId, username }
+    );
+
+    if (result.rowsAffected === 0) {
+      res.status(403).json({ error: 'You can only edit your own posts' });
+    } else {
+      res.status(200).json({ message: 'Post updated successfully' });
+    }
+
+    await connection.close();
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Error updating post', details: err.message });
+  }
+});
 
 // 게시글 삭제
 app.delete('/posts/:id', authenticate, async (req, res) => {
@@ -473,3 +515,29 @@ app.delete('/posts/:id', authenticate, async (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
+// 게시글 소유 여부 확인
+app.get('/posts/:id/owner', authenticate, async (req, res) => {
+  const postId = parseInt(req.params.id, 10);
+  const username = req.session.user.username;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const result = await connection.execute(
+      `SELECT COUNT(*) AS isOwner FROM board WHERE id = :id AND username = :username`,
+      { id: postId, username }
+    );
+
+    const isOwner = result.rows[0][0] > 0;
+
+    res.status(200).json({ isOwner });
+    await connection.close();
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({
+      error: 'Error checking ownership',
+      details: err.message
+    });
+  }
+});
+

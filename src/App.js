@@ -7,8 +7,13 @@ import Register from './userpage/Register';
 import MyPage from './userpage/MyPage';
 import Board from './board/Board';
 import WritePost from './board/WritePost';
-import PostDetail from './board/PostDetail'; // 게시글 상세 페이지 추가
-import './App.css';
+import PostDetail from './board/PostDetail';
+import EditPost from './board/EditPost';
+
+//CSS
+import './css/App.css';
+import userIcon from './image/user.png';
+
 
 export const AuthContext = createContext();
 
@@ -44,7 +49,7 @@ function App() {
                 <>
                   <Link to="/mypage">마이페이지</Link>
                   <Link to="/" onClick={() => setAuth({ loggedIn: false, user: null })}>로그아웃</Link>
-                  <Link to="/write">글쓰기</Link> {/* 글쓰기 버튼 */}
+                  <Link to="/write">글쓰기</Link>
                 </>
               ) : (
                 <>
@@ -58,7 +63,7 @@ function App() {
             <header className="header">
               {auth.loggedIn && (
                 <div className="user-info">
-                  <img src="user-profile-image-url" alt="User" />
+                  <img src={userIcon} alt="User" />
                   <span className="username">{auth.user.username}</span>
                 </div>
               )}
@@ -70,8 +75,9 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/mypage" element={<MyPage />} />
-                <Route path="/write" element={<WritePost />} /> {/* WritePost 컴포넌트 라우트 */}
-                <Route path="/posts/:id" element={<PostDetail />} /> {/* PostDetail 컴포넌트 라우트 */}
+                <Route path="/write" element={<WritePost />} /> 
+                <Route path="/posts/:id" element={<PostDetail />} />
+                <Route path="/edit-post/:id" element={<EditPost />} /> 
               </Routes>
             </main>
           </div>

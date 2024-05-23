@@ -54,8 +54,6 @@ const Board = () => {
             <p>작성일: {new Date(post.created_at).toLocaleString()}</p>
             {auth.user && auth.user.username === post.username && (
               <>
-                <button onClick={() => handleDelete(post.id)}>삭제</button>
-                {/* 수정 버튼 추가 필요 */}
               </>
             )}
           </div>
