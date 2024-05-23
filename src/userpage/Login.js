@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../App';
 import { Navigate } from 'react-router-dom';
+import '../css/Login.css'; // CSS 파일 import
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -32,7 +33,7 @@ const Login = () => {
   }
 
   return (
-    <div>
+    <div className="login-container">
       <h1>로그인</h1>
       <form onSubmit={handleSubmit}>
         <div>
@@ -44,7 +45,7 @@ const Login = () => {
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
         <button type="submit">로그인</button>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
+        {error && <p>{error}</p>}
       </form>
     </div>
   );

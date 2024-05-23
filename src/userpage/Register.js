@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import '../css/Register.css'; // CSS 파일 임포트
 
 const Register = () => {
   const [username, setUsername] = useState('');
@@ -49,7 +50,7 @@ const Register = () => {
   };
 
   return (
-    <div>
+    <div className="register-container">
       <h1>회원가입</h1>
       <form onSubmit={handleSubmit}>
         <div>
@@ -57,7 +58,7 @@ const Register = () => {
           <input
             type="text"
             value={username}
-            o onChange={handleUsernameChange}
+            onChange={handleUsernameChange}
             onBlur={handleUsernameBlur}
           />
           {isCheckingUsername && <span>확인 중...</span>}
@@ -80,7 +81,7 @@ const Register = () => {
         </div>
         <button type="submit">회원가입</button>
       </form>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p className="error-message">{error}</p>}
     </div>
   );
 };

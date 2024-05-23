@@ -380,7 +380,6 @@ app.post('/posts/:id/like', authenticate, async (req, res) => {
   }
 });
 
-
 // 댓글 작성
 app.post('/posts/:id/comments', authenticate, async (req, res) => {
   const postId = req.params.id;
@@ -512,10 +511,6 @@ app.delete('/posts/:id', authenticate, async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
-
 // 게시글 소유 여부 확인
 app.get('/posts/:id/owner', authenticate, async (req, res) => {
   const postId = parseInt(req.params.id, 10);
@@ -541,3 +536,128 @@ app.get('/posts/:id/owner', authenticate, async (req, res) => {
   }
 });
 
+// 사용자가 작성한 게시물 가져오기
+app.get('/users/:username/posts', async (req, res) => {
+  const { username } = req.params;
+  const { page = 1, limit = 5 } = req.query;
+  const offset = (page - 1) * limit;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const result = await connection.execute(
+      `SELECT id, title, created_at, views, likes, content
+       FROM board
+       WHERE username = :username
+       OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY`,
+      { username, offset: parseInt(offset), limit: parseInt(limit) }
+    );
+
+    const posts = await Promise.all(result.rows.map(async (row) => ({
+      id: row[0],
+      title: row[1],
+      created_at: row[2],
+      views: row[3],
+      likes: row[4],
+      content: await readClob(row[5])
+    })));
+
+    await connection.close();
+    res.status(200).json(posts);
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Error fetching user posts', details: err.message });
+  }
+});
+
+// 사용자가 작성한 댓글 가져오기
+app.get('/users/:username/comments', async (req, res) => {
+  const { username } = req.params;
+  const { page = 1, limit = 5 } = req.query;
+  const offset = (page - 1) * limit;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const result = await connection.execute(
+      `SELECT c.id, c.content, c.created_at, b.title AS post_title, b.id AS post_id
+       FROM comments c 
+       JOIN board b ON c.post_id = b.id 
+       WHERE c.user_id = :username
+       OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY`,
+      { username, offset: parseInt(offset), limit: parseInt(limit) }
+    );
+
+    const comments = await Promise.all(result.rows.map(async (row) => ({
+      id: row[0],
+      content: await readClob(row[1]),
+      created_at: row[2],
+      post_title: row[3],
+      post_id: row[4]
+    })));
+
+    await connection.close();
+    res.status(200).json(comments);
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Error fetching user comments', details: err.message });
+  }
+});
+
+// 사용자가 좋아요한 게시물 가져오기
+app.get('/users/:username/likes', async (req, res) => {
+  const { username } = req.params;
+  const { page = 1, limit = 5 } = req.query;
+  const offset = (page - 1) * limit;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const result = await connection.execute(
+      `SELECT b.id, b.title, b.username, b.created_at, b.views, b.likes, b.content
+       FROM post_likes pl
+       JOIN board b ON pl.post_id = b.id
+       WHERE pl.user_id = :username
+       OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY`,
+      { username, offset: parseInt(offset), limit: parseInt(limit) }
+    );
+
+    const likedPosts = await Promise.all(result.rows.map(async (row) => ({
+      id: row[0],
+      title: row[1],
+      username: row[2],
+      created_at: row[3],
+      views: row[4],
+      likes: row[5],
+      content: await readClob(row[6])
+    })));
+
+    await connection.close();
+    res.status(200).json(likedPosts);
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Error fetching liked posts', details: err.message });
+  }
+});
+
+// 유틸리티 함수: CLOB 데이터를 읽어 문자열로 변환
+async function readClob(clob) {
+  return new Promise((resolve, reject) => {
+    if (clob === null) {
+      resolve(null);
+      return;
+    }
+    let data = '';
+    clob.setEncoding('utf8');
+    clob.on('data', chunk => {
+      data += chunk;
+    });
+    clob.on('end', () => {
+      resolve(data);
+    });
+    clob.on('error', err => {
+      reject(err);
+    });
+  });
+}
+
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
