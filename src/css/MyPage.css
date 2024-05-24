@@ -1,48 +1,26 @@
 .mypage-container {
   display: flex;
-  flex-direction: row;
-  padding: 20px;
 }
 
 .sidebar {
-  flex: 0 0 200px;
+  width: 250px;
   padding: 20px;
-  background-color: #f8f9fa;
-  border-right: 1px solid #ddd;
-  text-align: center;
+  background-color: #f7f7f7;
 }
 
-.sidebar img.user-icon {
+.user-icon {
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  margin-bottom: 10px;
 }
 
-.sidebar h2 {
-  margin: 10px 0;
-  font-size: 20px;
-}
-
-.sidebar p {
-  margin: 5px 0;
-  font-size: 14px;
-  color: #777;
-}
-
-.sidebar .sidebar-menu {
+.sidebar-menu {
   margin-top: 20px;
 }
 
-.sidebar .sidebar-menu p {
-  margin: 10px 0;
-  font-size: 16px;
-  color: #007bff;
+.sidebar-menu p {
   cursor: pointer;
-}
-
-.sidebar .sidebar-menu p:hover {
-  text-decoration: underline;
+  margin: 10px 0;
 }
 
 .content {
@@ -51,13 +29,7 @@
 }
 
 .content-section {
-  margin-bottom: 40px;
-}
-
-.content-section h2 {
   margin-bottom: 20px;
-  font-size: 24px;
-  font-weight: bold;
 }
 
 .table {
@@ -65,34 +37,18 @@
   border-collapse: collapse;
 }
 
-.table th, .table td {
+.table th,
+.table td {
   border: 1px solid #ddd;
   padding: 8px;
-  text-align: left;
 }
 
 .table th {
   background-color: #f2f2f2;
-  font-weight: bold;
+  text-align: left;
 }
 
 .pagination {
   display: flex;
-  justify-content: center;
-  margin-top: 20px;
-}
-
-.pagination button {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  margin: 0 5px;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-.pagination button:disabled {
-  background-color: #ddd;
-  cursor: not-allowed;
+  justify-content: space-between;
 }

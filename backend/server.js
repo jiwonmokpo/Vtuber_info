@@ -5,11 +5,26 @@ const cors = require('cors');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const session = require('express-session');
+const path = require('path');
+const multer = require('multer');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
 const port = 5000;
 
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'C:/Vtuber_imageDB/profile_image/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storage });
+
+app.use('/uploads', express.static(path.join(__dirname, 'C:/Vtuber_imageDB/profile_image')));
 app.use(bodyParser.json());
 app.use(cors({
   origin: 'http://localhost:3000',
@@ -21,7 +36,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'secret',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // In production, set to true if using https
+  cookie: { secure: false }
 }));
 
 const dbConfig = {
@@ -75,27 +90,6 @@ const authenticate = (req, res, next) => {
     res.status(401).json({ error: 'Unauthorized' });
   }
 };
-
-// 유틸리티 함수: CLOB 데이터를 읽어 문자열로 변환
-async function readClob(clob) {
-  return new Promise((resolve, reject) => {
-    if (clob === null) {
-      resolve(null);
-      return;
-    }
-    let data = '';
-    clob.setEncoding('utf8');
-    clob.on('data', chunk => {
-      data += chunk;
-    });
-    clob.on('end', () => {
-      resolve(data);
-    });
-    clob.on('error', err => {
-      reject(err);
-    });
-  });
-}
 
 // 회원가입
 app.post('/register', async (req, res) => {
@@ -238,14 +232,42 @@ app.get('/check-username', async (req, res) => {
   }
 });
 
-// 사용자 인증 상태 확인
-app.get('/check-auth', (req, res) => {
+// 사용자 인증 상태 확인 엔드포인트
+app.get('/check-auth', async (req, res) => {
+  console.log('Received a request to /check-auth');
   if (req.session.user) {
-    res.status(200).json({ authenticated: true, user: req.session.user });
+    try {
+      const connection = await oracledb.getConnection(dbConfig);
+      const result = await connection.execute(
+        'SELECT id, username, email FROM MEMBER WHERE username = :username',
+        { username: req.session.user.username },
+        { userid: req.session.user.id }
+      );
+
+      await connection.close();
+
+      if (result.rows.length > 0) {
+        const user = result.rows[0];
+        res.status(200).json({
+          authenticated: true,
+          user: {
+            id: user[0],
+            username: user[1],
+            email: user[2]
+          }
+        });
+      } else {
+        res.status(401).json({ authenticated: false });
+      }
+    } catch (err) {
+      console.error('Database error:', err);
+      res.status(500).json({ error: 'Error checking auth status', details: err.message });
+    }
   } else {
-    res.status(200).json({ authenticated: false });
+    res.status(401).json({ authenticated: false });
   }
 });
+
 
 // 게시글 목록 조회
 app.get('/posts', async (req, res) => {
@@ -657,6 +679,129 @@ async function readClob(clob) {
     });
   });
 }
+
+// 아이디 및 비밀번호 업데이트 엔드포인트
+app.post('/profile/update-info', async (req, res) => {
+  const { userId, newUsername, newPassword } = req.body;
+
+  if (!newUsername && !newPassword) {
+    return res.status(400).json({ error: '아이디 또는 비밀번호를 입력해주세요.' });
+  }
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+
+    let updateQuery = 'UPDATE MEMBER SET ';
+    let updateParams = {};
+
+    if (newUsername) {
+      updateQuery += 'username = :newUsername, ';
+      updateParams.newUsername = newUsername;
+    }
+
+    if (newPassword) {
+      updateQuery += 'password = :newPassword, ';
+      updateParams.newPassword = newPassword;
+    }
+
+    // 마지막 쉼표 제거
+    updateQuery = updateQuery.slice(0, -2);
+    updateQuery += ' WHERE id = :userId';
+    updateParams.userId = userId;
+
+    await connection.execute(updateQuery, updateParams, { autoCommit: true });
+
+    await connection.close();
+    res.status(200).json({ message: '정보가 성공적으로 업데이트되었습니다.' });
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: '정보 업데이트 중 오류가 발생했습니다.', details: err.message });
+  }
+});
+
+// 유저 프로필 이미지 경로 가져오기 엔드포인트
+app.get('/users/:username/profile-image-path', async (req, res) => {
+  const { username } = req.params;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const result = await connection.execute(
+      `SELECT profile_image_path FROM MEMBER WHERE username = :username`,
+      { username }
+    );
+
+    if (result.rows.length > 0) {
+      res.status(200).json({ profileImagePath: result.rows[0][0] });
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
+
+    await connection.close();
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: '프로필 이미지 경로를 가져오는 중 오류가 발생했습니다.', details: err.message });
+  }
+});
+
+// 유저 정보 가져오기 엔드포인트
+app.get('/users/:username/profile', async (req, res) => {
+  const { username } = req.params;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const result = await connection.execute(
+      `SELECT email FROM MEMBER WHERE username = :username`,
+      { username }
+    );
+
+    if (result.rows.length > 0) {
+      res.status(200).json({ email: result.rows[0][0] });
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
+
+    await connection.close();
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: '유저 정보를 가져오는 중 오류가 발생했습니다.', details: err.message });
+  }
+});
+
+// 프로필 이미지 업데이트 엔드포인트
+app.post('/profile/update-image', upload.single('profileImage'), async (req, res) => {
+  if (!req.session.user) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const profileImage = req.file;
+  const userId = req.body.userId; // 수정된 부분: req.user._id 대신 req.body.userId 사용
+
+  console.log('Received request to update profile image for userId:', userId);
+
+  if (!profileImage) {
+    return res.status(400).json({ error: '이미지를 업로드해주세요.' });
+  }
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const imagePath = profileImage.path;
+    const result = await connection.execute(
+      'UPDATE MEMBER SET profile_image_path = :imagePath WHERE id = :userId',
+      { imagePath, userId },
+      { autoCommit: true }
+    );
+
+    console.log('Update result:', result);
+
+    await connection.close();
+    res.status(200).json({ message: '프로필 이미지가 성공적으로 업데이트되었습니다.' });
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: '프로필 이미지 업데이트 중 오류가 발생했습니다.', details: err.message });
+  }
+});
+
+
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

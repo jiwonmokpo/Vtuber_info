@@ -16,12 +16,14 @@ const MyPage = () => {
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [hasMoreComments, setHasMoreComments] = useState(true);
   const [hasMoreLikes, setHasMoreLikes] = useState(true);
+  const [profileImagePath, setProfileImagePath] = useState('');
 
   useEffect(() => {
     if (auth.user) {
       fetchUserPosts(postPage);
       fetchUserComments(commentPage);
       fetchLikedPosts(likePage);
+      fetchProfileImagePath();
     }
   }, [auth.user, postPage, commentPage, likePage]);
 
@@ -67,18 +69,33 @@ const MyPage = () => {
     }
   };
 
+  const fetchProfileImagePath = async () => {
+    try {
+      const response = await axios.get(`http://localhost:5000/users/${auth.user.username}/profile-image-path`, {
+        withCredentials: true
+      });
+      setProfileImagePath(response.data.profileImagePath);
+    } catch (error) {
+      console.error('Error fetching profile image path:', error);
+      setProfileImagePath('');
+    }
+  };
+
   if (!auth.user) {
     return <div>Loading...</div>;
   }
 
+  const profileImage = profileImagePath ? `http://localhost:5000/uploads/${profileImagePath.split('\\').pop()}` : userIcon;
+
   return (
     <div className="mypage-container">
       <div className="sidebar">
-        <img src={userIcon} alt="User" className="user-icon" />
+        <img src={profileImage} alt="User" className="user-icon" />
         <h2>{auth.user.username}</h2>
         <p>{auth.user.email}</p>
         <div className="sidebar-menu">
-          <p>내 정보</p>
+          <Link to="/profile/update"><p>프로필 바꾸기</p></Link>
+          <Link to="/profile/userinfo"><p>내 정보</p></Link>
           <p>알림함</p>
           <p>공지사항</p>
           <p>로그아웃</p>

@@ -5,15 +5,16 @@ import Home from './userpage/Home';
 import Login from './userpage/Login';
 import Register from './userpage/Register';
 import MyPage from './userpage/MyPage';
+import ProfileUpdate from './userpage/ProfileUpdate';
+import ProfileInfo from './userpage/ProfileInfo';
 import Board from './board/Board';
 import WritePost from './board/WritePost';
 import PostDetail from './board/PostDetail';
 import EditPost from './board/EditPost';
 
-//CSS
+// CSS
 import './css/App.css';
 import userIcon from './image/user.png';
-
 
 export const AuthContext = createContext();
 
@@ -75,9 +76,11 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/mypage" element={<MyPage />} />
-                <Route path="/write" element={<WritePost />} /> 
+                <Route path="/write" element={<WritePost />} />
                 <Route path="/posts/:id" element={<PostDetail />} />
-                <Route path="/edit-post/:id" element={<EditPost />} /> 
+                <Route path="/edit-post/:id" element={<EditPost />} />
+                <Route path="/profile/update" element={<ProfileUpdate />} />
+                <Route path="/profile/userinfo" element={<ProfileInfo />} />
               </Routes>
             </main>
           </div>
