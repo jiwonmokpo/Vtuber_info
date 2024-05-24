@@ -20,6 +20,7 @@ export const AuthContext = createContext();
 
 function App() {
   const [auth, setAuth] = useState({ loggedIn: false, user: null });
+  const [profileImagePath, setProfileImagePath] = useState('');
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -27,6 +28,7 @@ function App() {
         const response = await axios.get('http://localhost:5000/check-auth', { withCredentials: true });
         if (response.data.authenticated) {
           setAuth({ loggedIn: true, user: response.data.user });
+          fetchProfileImagePath(response.data.user.username);
         } else {
           setAuth({ loggedIn: false, user: null });
         }
@@ -37,6 +39,20 @@ function App() {
 
     checkAuth();
   }, []);
+
+  const fetchProfileImagePath = async (username) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/users/${username}/profile-image-path`, {
+        withCredentials: true
+      });
+      setProfileImagePath(response.data.profileImagePath);
+    } catch (error) {
+      console.error('Error fetching profile image path:', error);
+      setProfileImagePath('');
+    }
+  };
+
+  const profileImage = profileImagePath ? `http://localhost:5000/uploads/${profileImagePath.split('\\').pop()}` : userIcon;
 
   return (
     <AuthContext.Provider value={{ auth, setAuth }}>
@@ -64,7 +80,7 @@ function App() {
             <header className="header">
               {auth.loggedIn && (
                 <div className="user-info">
-                  <img src={userIcon} alt="User" />
+                  <img src={profileImage} alt="User" />
                   <span className="username">{auth.user.username}</span>
                 </div>
               )}
