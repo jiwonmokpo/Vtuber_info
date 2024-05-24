@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../App';
 import { Link } from 'react-router-dom';
@@ -6,7 +6,7 @@ import '../css/MyPage.css';
 import userIcon from '../image/user.png';
 
 const MyPage = () => {
-  const { auth } = useContext(AuthContext);
+  const { auth, dispatch } = useContext(AuthContext);
   const [userPosts, setUserPosts] = useState([]);
   const [userComments, setUserComments] = useState([]);
   const [likedPosts, setLikedPosts] = useState([]);
@@ -17,6 +17,8 @@ const MyPage = () => {
   const [hasMoreComments, setHasMoreComments] = useState(true);
   const [hasMoreLikes, setHasMoreLikes] = useState(true);
   const [profileImagePath, setProfileImagePath] = useState('');
+  const [isImageUploaded, setIsImageUploaded] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (auth.user) {
@@ -78,6 +80,37 @@ const MyPage = () => {
     } catch (error) {
       console.error('Error fetching profile image path:', error);
       setProfileImagePath('');
+    }
+  };
+
+  const handleFileChange = (event) => {
+    setIsImageUploaded(true);
+  };
+
+  const updateUserProfileImage = async (file) => {
+    const formData = new FormData();
+    formData.append('profileImage', file);
+    
+    return await axios.post('http://localhost:5000/profile/update-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      withCredentials: true
+    });
+  };
+
+  const handleAddProfileImgSubmit = async (event) => {
+    event.preventDefault();
+
+    try {
+      if (isImageUploaded) {
+        const file = fileInputRef.current.files[0];
+        const response = await updateUserProfileImage(file);
+        console.log(response.data);
+        fetchProfileImagePath(); // 상태를 업데이트하여 프로필 이미지 경로를 다시 가져옴
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -200,6 +233,13 @@ const MyPage = () => {
             <button disabled={likePage === 1} onClick={() => setLikePage(likePage - 1)}>이전</button>
             <button disabled={!hasMoreLikes} onClick={() => setLikePage(likePage + 1)}>다음</button>
           </div>
+        </div>
+        <div className="content-section" style={{ display: 'none' }}>
+          <h2>프로필 사진 변경</h2>
+          <form onSubmit={handleAddProfileImgSubmit}>
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} />
+            <button type="submit">프로필 사진 업로드</button>
+          </form>
         </div>
       </div>
     </div>

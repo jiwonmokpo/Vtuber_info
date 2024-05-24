@@ -13,9 +13,12 @@ require('dotenv').config();
 const app = express();
 const port = 5000;
 
+const profileImagePath = 'C:/Vtuber_imageDB/profile_image';
+const defaultImagePath = 'C:/Vtuber_imageDB/profile_default';
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'C:/Vtuber_imageDB/profile_image/');
+    cb(null, profileImagePath);
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
@@ -24,7 +27,9 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-app.use('/uploads', express.static(path.join(__dirname, 'C:/Vtuber_imageDB/profile_image')));
+// 정적 파일 경로 설정
+app.use('/uploads', express.static(profileImagePath));
+app.use('/default', express.static(defaultImagePath));
 app.use(bodyParser.json());
 app.use(cors({
   origin: 'http://localhost:3000',
@@ -234,7 +239,6 @@ app.get('/check-username', async (req, res) => {
 
 // 사용자 인증 상태 확인 엔드포인트
 app.get('/check-auth', async (req, res) => {
-  console.log('Received a request to /check-auth');
   if (req.session.user) {
     try {
       const connection = await oracledb.getConnection(dbConfig);
@@ -800,8 +804,6 @@ app.post('/profile/update-image', upload.single('profileImage'), async (req, res
     res.status(500).json({ error: '프로필 이미지 업데이트 중 오류가 발생했습니다.', details: err.message });
   }
 });
-
-
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
