@@ -122,16 +122,12 @@ const MyPage = () => {
 
   return (
     <div className="mypage-container">
-      <div className="sidebar">
+      <div className="sidebar-mypage">
         <img src={profileImage} alt="User" className="user-icon" />
         <h2>{auth.user.username}</h2>
         <p>{auth.user.email}</p>
         <div className="sidebar-menu">
           <Link to="/profile/update"><p>프로필 바꾸기</p></Link>
-          <Link to="/profile/userinfo"><p>내 정보</p></Link>
-          <p>알림함</p>
-          <p>공지사항</p>
-          <p>로그아웃</p>
         </div>
       </div>
       <div className="content">
@@ -175,7 +171,6 @@ const MyPage = () => {
               <tr>
                 <th>댓글 내용</th>
                 <th>작성일</th>
-                <th>게시글 제목</th>
               </tr>
             </thead>
             <tbody>
@@ -184,7 +179,6 @@ const MyPage = () => {
                   <tr key={comment.id}>
                     <td><Link to={`/posts/${comment.post_id}#${comment.id}`}>{comment.content}</Link></td>
                     <td>{new Date(comment.created_at).toLocaleString()}</td>
-                    <td><Link to={`/posts/${comment.post_id}`}>{comment.post_title}</Link></td>
                   </tr>
                 ))
               ) : (

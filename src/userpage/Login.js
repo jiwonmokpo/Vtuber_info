@@ -9,13 +9,14 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [redirect, setRedirect] = useState(false);
   const [error, setError] = useState('');
-  const { setAuth } = useContext(AuthContext);
+  const { setAuth, checkAuth  } = useContext(AuthContext);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const response = await axios.post('http://localhost:5000/login', { username, password }, { withCredentials: true });
-      if (response.status === 200) { // 서버로부터 성공 응답을 받았을 때
+      if (response.status === 200) {
+        await checkAuth();
         setAuth({ loggedIn: true, user: response.data });
         setRedirect(true);
       } else {
@@ -29,7 +30,13 @@ const Login = () => {
   };
 
   if (redirect) {
-    return <Navigate to="/" replace={true} />; // Navigate로 리디렉션
+    return (
+      <Navigate
+        to="/"
+        replace={true}
+        state={{ from: 'login' }}
+      />
+    );
   }
 
   return (

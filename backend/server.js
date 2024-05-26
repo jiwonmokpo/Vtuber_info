@@ -8,6 +8,7 @@ const session = require('express-session');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
+const { permission } = require('process');
 require('dotenv').config();
 
 const app = express();
@@ -15,10 +16,18 @@ const port = 5000;
 
 const profileImagePath = 'C:/Vtuber_imageDB/profile_image';
 const defaultImagePath = 'C:/Vtuber_imageDB/profile_default';
+const vtProfilePath = 'C:/Vtuber_imageDB/vt_profile';
+const vtHeaderPath = 'C:/Vtuber_imageDB/vt_header';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, profileImagePath);
+    if (file.fieldname === 'vtProfileImage') {
+      cb(null, vtProfilePath);
+    } else if (file.fieldname === 'vtHeaderImage') {
+      cb(null, vtHeaderPath);
+    } else if (file.fieldname === 'profileImage') {
+      cb(null, profileImagePath);
+    }
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
@@ -30,6 +39,9 @@ const upload = multer({ storage: storage });
 // 정적 파일 경로 설정
 app.use('/uploads', express.static(profileImagePath));
 app.use('/default', express.static(defaultImagePath));
+app.use('/uploads', express.static(vtProfilePath));
+app.use('/uploads', express.static(vtHeaderPath));
+
 app.use(bodyParser.json());
 app.use(cors({
   origin: 'http://localhost:3000',
@@ -243,9 +255,9 @@ app.get('/check-auth', async (req, res) => {
     try {
       const connection = await oracledb.getConnection(dbConfig);
       const result = await connection.execute(
-        'SELECT id, username, email FROM MEMBER WHERE username = :username',
+        'SELECT id, username, email, permission FROM MEMBER WHERE username = :username',
         { username: req.session.user.username },
-        { userid: req.session.user.id }
+        { userid: req.session.user.id },
       );
 
       await connection.close();
@@ -257,7 +269,8 @@ app.get('/check-auth', async (req, res) => {
           user: {
             id: user[0],
             username: user[1],
-            email: user[2]
+            email: user[2],
+            permission: user[3]
           }
         });
       } else {
@@ -684,45 +697,6 @@ async function readClob(clob) {
   });
 }
 
-// 아이디 및 비밀번호 업데이트 엔드포인트
-app.post('/profile/update-info', async (req, res) => {
-  const { userId, newUsername, newPassword } = req.body;
-
-  if (!newUsername && !newPassword) {
-    return res.status(400).json({ error: '아이디 또는 비밀번호를 입력해주세요.' });
-  }
-
-  try {
-    const connection = await oracledb.getConnection(dbConfig);
-
-    let updateQuery = 'UPDATE MEMBER SET ';
-    let updateParams = {};
-
-    if (newUsername) {
-      updateQuery += 'username = :newUsername, ';
-      updateParams.newUsername = newUsername;
-    }
-
-    if (newPassword) {
-      updateQuery += 'password = :newPassword, ';
-      updateParams.newPassword = newPassword;
-    }
-
-    // 마지막 쉼표 제거
-    updateQuery = updateQuery.slice(0, -2);
-    updateQuery += ' WHERE id = :userId';
-    updateParams.userId = userId;
-
-    await connection.execute(updateQuery, updateParams, { autoCommit: true });
-
-    await connection.close();
-    res.status(200).json({ message: '정보가 성공적으로 업데이트되었습니다.' });
-  } catch (err) {
-    console.error('Database error:', err);
-    res.status(500).json({ error: '정보 업데이트 중 오류가 발생했습니다.', details: err.message });
-  }
-});
-
 // 유저 프로필 이미지 경로 가져오기 엔드포인트
 app.get('/users/:username/profile-image-path', async (req, res) => {
   const { username } = req.params;
@@ -804,6 +778,109 @@ app.post('/profile/update-image', upload.single('profileImage'), async (req, res
     res.status(500).json({ error: '프로필 이미지 업데이트 중 오류가 발생했습니다.', details: err.message });
   }
 });
+
+//Vtuber 등록
+app.post('/vtuber_register', upload.fields([{ name: 'vtProfileImage', maxCount: 1 }, { name: 'vtHeaderImage', maxCount: 1 }]), async (req, res) => {
+  const { category, company, vtubername, gender, age, mbti, platform, role, birthday, debutdate, youtubelink, platformlink, xlink } = req.body;
+  const vtProfileImage = req.files.vtProfileImage ? req.files.vtProfileImage[0].filename : null;
+  const vtHeaderImage = req.files.vtHeaderImage ? req.files.vtHeaderImage[0].filename : null;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+
+    const result = await connection.execute(
+      `INSERT INTO vtinfo (category, company, vtubername, gender, age, mbti, platform, role, birthday, debutdate, youtubelink, platformlink, xlink, profile_image, header_image) 
+       VALUES (:category, :company, :vtubername, :gender, :age, :mbti, :platform, :role, :birthday, :debutdate, :youtubelink, :platformlink, :xlink, :profile_image, :header_image)`,
+      { category, company, vtubername, gender, age, mbti, platform, role, birthday, debutdate, youtubelink, platformlink, xlink, profile_image: vtProfileImage, header_image: vtHeaderImage }
+    );
+
+    await connection.close();
+
+    res.status(200).json({ message: 'Vtuber 등록이 완료되었습니다.' });
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Vtuber 등록 중 오류가 발생했습니다.', details: err.message });
+  }
+});
+
+// vtinfo 정보를 가져오는 엔드포인트
+app.get('/vtinfo', async (req, res) => {
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const result = await connection.execute('SELECT * FROM vtinfo');
+
+    await connection.close();
+
+    if (result.rows.length > 0) {
+      const vtubers = result.rows.map(row => ({
+        id: row[0],
+        category: row[1],
+        company: row[2],
+        vtubername: row[3],
+        gender: row[4],
+        age: row[5],
+        mbti: row[6],
+        platform: row[7],
+        role: row[8],
+        profile_image: row[9],
+        header_image: row[10],
+        birthday: row[11],
+        debutdate: row[12],
+        youtubelink: row[13],
+        platformlink: row[14],
+        xlink: row[15]
+      }));
+      res.status(200).json(vtubers);
+    } else {
+      res.status(404).json({ message: 'No vtubers found' });
+    }
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Error fetching vtubers', details: err.message });
+  }
+});
+
+// 특정 vtuber 정보를 가져오는 엔드포인트
+app.get('/vtinfo/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const result = await connection.execute(
+      'SELECT * FROM vtinfo WHERE id = :id',
+      { id }
+    );
+
+    await connection.close();
+
+    if (result.rows.length > 0) {
+      const vtuber = result.rows[0];
+      res.status(200).json({
+        id: vtuber[0],
+        category: vtuber[1],
+        company: vtuber[2],
+        vtubername: vtuber[3],
+        gender: vtuber[4],
+        age: vtuber[5],
+        mbti: vtuber[6],
+        platform: vtuber[7],
+        role: vtuber[8],
+        profile_image: vtuber[9],
+        header_image: vtuber[10],
+        birthday: vtuber[11],
+        debutdate: vtuber[12],
+        youtubelink: vtuber[13],
+        platformlink: vtuber[14],
+        xlink: vtuber[15]
+      });
+    } else {
+      res.status(404).json({ message: 'Vtuber not found' });
+    }
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Error fetching vtuber', details: err.message });
+  }
+});
+
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

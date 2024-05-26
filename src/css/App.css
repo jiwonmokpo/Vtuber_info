@@ -44,7 +44,7 @@ body {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  padding: 10px 20px;
+  padding: 10px 30px;
   background-color: #fff;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
@@ -238,4 +238,54 @@ main {
 
 .write-button a:hover {
   background-color: #9b6ede;
+}
+.user-info {
+  position: relative;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.login-link a {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+  font-weight: bold;
+  margin: 3px;
+}
+
+.login-link a:hover {
+  background-color: #0056b3;
+}
+
+.username {
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 40px;
+  width: 200px;
+  right: 0;
+  background-color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  padding: 10px;
+  margin-left : 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-menu a {
+  padding: 5px 10px;
+  text-decoration: none;
+  color: black;
+}
+
+.dropdown-menu a:hover {
+  background-color: #f0f0f0;
 }
