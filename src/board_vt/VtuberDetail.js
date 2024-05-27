@@ -10,6 +10,9 @@ import xIcon from '../image/x.svg';
 const VtuberDetail = () => {
   const { id } = useParams();
   const [vtuber, setVtuber] = useState(null);
+  const [youtubeSubscribers, setYoutubeSubscribers] = useState('');
+  const [platformSubscribers, setPlatformSubscribers] = useState('');
+  const [xFollowers, setXFollowers] = useState('');
 
   useEffect(() => {
     const fetchVtuber = async () => {
@@ -23,6 +26,9 @@ const VtuberDetail = () => {
 
     fetchVtuber();
   }, [id]);
+
+  useEffect(() => {
+  }, [vtuber]);
 
   if (!vtuber) {
     return <div>Loading...</div>;
@@ -77,22 +83,19 @@ const VtuberDetail = () => {
           <div className="channel-box">
             <a href={vtuber.youtubelink} target="_blank" rel="noopener noreferrer">
               <img src={youtubeIcon} alt="YouTube" />
-              <p>구독자</p>
-              <p>8.64만</p>
+              <p>바로가기</p>
             </a>
           </div>
           <div className="channel-box">
             <a href={vtuber.platformlink} target="_blank" rel="noopener noreferrer">
               <img src={getPlatformIcon(vtuber.platform)} alt={vtuber.platform} />
-              <p>구독자</p>
-              <p>10.5만</p>
+              <p>바로가기</p>
             </a>
           </div>
           <div className="channel-box">
             <a href={vtuber.xlink} target="_blank" rel="noopener noreferrer">
               <img src={xIcon} alt="X" />
-              <p>구독자</p>
-              <p>3.1만</p>
+              <p>바로가기</p>
             </a>
           </div>
         </div>

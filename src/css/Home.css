@@ -1,33 +1,90 @@
+/* Add this to your Home.css file */
 .home-container {
-    padding: 20px;
-  }
-  
-  .live-streams {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-  }
-  
-  .stream {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 10px;
-    width: 300px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  .stream-thumbnail {
-    width: 100%;
-    height: auto;
-    border-radius: 4px;
-  }
-  
-  .stream h2 {
-    font-size: 1.5em;
-    margin: 10px 0;
-  }
-  
-  .stream p {
-    color: #555;
-  }
-  
+  /* Your existing styles */
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.dropdown-icon {
+  cursor: pointer;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  width: 200px;
+  padding: 8px 0;
+}
+
+.dropdown-item {
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background-color: #f0f0f0;
+}
+
+.month-selector {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.calendar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.weekdays, .days {
+  display: flex;
+}
+
+.weekday, .day {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.selected {
+  background-color: #007bff;
+  color: white;
+  border-radius: 50%;
+}
+
+.birthdays {
+  margin-top: 16px;
+}
+
+.birthday-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.birthday-card img {
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+}
+
+.birthday-card p {
+  margin-top: 8px;
+  text-align: center;
+}

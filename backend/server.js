@@ -881,6 +881,34 @@ app.get('/vtinfo/:id', async (req, res) => {
   }
 });
 
+//생일 데이터
+app.get('/birthdays/:month', async (req, res) => {
+  const { month } = req.params;
+  let connection;
+
+  try {
+    connection = await oracledb.getConnection(dbConfig);
+    const result = await connection.execute(
+      `SELECT VTUBERNAME, TO_CHAR(BIRTHDAY, 'MM-DD') AS BIRTHDAY, PROFILE_IMAGE
+       FROM VTINFO
+       WHERE TO_CHAR(BIRTHDAY, 'MM') = :month`,
+      [month]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Database query failed');
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  }
+});
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
