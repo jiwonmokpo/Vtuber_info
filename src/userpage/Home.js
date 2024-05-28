@@ -125,16 +125,11 @@ const Home = () => {
       <div className="month-selector">
         <button onClick={handlePrevClick}> &lt; </button>
         <div className="calendar">
-          <div className="weekdays">
-            {visibleDays.map(({ weekday }, index) => (
-              <div key={index} className="weekday">{weekday}</div>
-            ))}
-          </div>
           <div className="days">
-            {visibleDays.map(({ day, month: dayMonth }, index) => (
+            {visibleDays.map(({ day, weekday, month: dayMonth }, index) => (
               <div 
                 key={index} 
-                className={`day ${selectedDay === day && month === (dayMonth || month) ? 'selected' : ''}`} 
+                className={`day-container ${selectedDay === day && month === (dayMonth || month) ? 'selected' : ''}`} 
                 onClick={() => {
                   setSelectedDay(day);
                   if (dayMonth) {
@@ -144,7 +139,12 @@ const Home = () => {
                   }
                 }}
               >
-                {day}
+                <div className={`weekday ${selectedDay === day ? 'selected' : ''} ${day === new Date().getDate() && month === new Date().getMonth() + 1 ? 'today' : ''}`}>
+                  {weekday}
+                </div>
+                <div className={`day ${selectedDay === day ? 'selected' : ''}`}>
+                  {day}
+                </div>
               </div>
             ))}
           </div>
