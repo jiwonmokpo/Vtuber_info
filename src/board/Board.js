@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../App';
+import '../css/Board.css';  
 
 const Board = () => {
   const { auth } = useContext(AuthContext);
@@ -20,7 +21,6 @@ const Board = () => {
         setHasMore(false);
       }
       setPosts((prevPosts) => {
-        // 중복된 id를 가진 게시글을 제거하고 새로운 게시글을 추가합니다.
         const newPosts = response.data.filter(
           (newPost) => !prevPosts.some((post) => post.id === newPost.id)
         );
@@ -41,19 +41,31 @@ const Board = () => {
   };
 
   return (
-    <div>
-      <h1>게시판</h1>
+    <div className="container">
+      <div className="bbsheader">
+        <h1>게시판</h1>
+        {auth.loggedIn && (
+          <div className="write-button">
+            <Link to="/write">글쓰기</Link>
+          </div>
+        )}
+      </div>
       <div>
         {posts.map((post) => (
           <div key={post.id} className="post">
-            <h2>
-              <Link to={`/posts/${post.id}`}>{post.title}</Link>
-            </h2>
+            <div className="post-header">
+              <h2>
+                <Link to={`/posts/${post.id}`}>{post.title}</Link>
+              </h2>
+              <div className="post-info">
+                <span className="author">{post.username}</span>
+                <span className="date">{new Date(post.created_at).toLocaleString()}</span>
+              </div>
+            </div>
             <p>{post.content}</p>
-            <p>작성자: {post.username}</p>
-            <p>작성일: {new Date(post.created_at).toLocaleString()}</p>
             {auth.user && auth.user.username === post.username && (
               <>
+                {/* Add edit and delete buttons here */}
               </>
             )}
           </div>
@@ -63,11 +75,6 @@ const Board = () => {
         {page > 1 && <button onClick={() => setPage(page - 1)}>이전</button>}
         {hasMore && <button onClick={() => setPage(page + 1)}>다음</button>}
       </div>
-      {auth.loggedIn && (
-        <div className="write-button">
-          <Link to="/write">글쓰기</Link>
-        </div>
-      )}
     </div>
   );
 };

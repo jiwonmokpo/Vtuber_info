@@ -1,0 +1,41 @@
+.CompanyBoard-container {
+    padding: 20px;
+    margin-left: 100px;
+  }
+  
+  .CompanyBoard-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  
+  .CompanyBoard-card {
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  .CompanyBoard-header-image {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+  }
+  
+  .CompanyBoard-profile-image {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    margin: -50px auto 10px;
+    border: 3px solid white;
+  }
+
+  .CompanyBoard-info {
+    padding: 10px;
+    text-align: center;
+  }
+  

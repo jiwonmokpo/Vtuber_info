@@ -10,9 +10,7 @@ import xIcon from '../image/x.svg';
 const VtuberDetail = () => {
   const { id } = useParams();
   const [vtuber, setVtuber] = useState(null);
-  const [youtubeSubscribers, setYoutubeSubscribers] = useState('');
-  const [platformSubscribers, setPlatformSubscribers] = useState('');
-  const [xFollowers, setXFollowers] = useState('');
+  const [showFullHeader, setShowFullHeader] = useState(false);
 
   useEffect(() => {
     const fetchVtuber = async () => {
@@ -26,9 +24,6 @@ const VtuberDetail = () => {
 
     fetchVtuber();
   }, [id]);
-
-  useEffect(() => {
-  }, [vtuber]);
 
   if (!vtuber) {
     return <div>Loading...</div>;
@@ -55,11 +50,14 @@ const VtuberDetail = () => {
   return (
     <div className="vtuber-detail-container">
       <div className="vtuber-header">
-        <div className="header-image">
+        <div className={`header-image ${showFullHeader ? 'full' : 'half'}`}>
           <img src={`http://localhost:5000/uploads/${vtuber.header_image}`} alt={`${vtuber.vtubername} header`} />
+          <button onClick={() => setShowFullHeader(!showFullHeader)} className="toggle-button">
+            {showFullHeader ? '간략히 보기' : '전체 보기'}
+          </button>
         </div>
         <div className="profile-image">
-          <img src={`http://localhost:5000/uploads/${vtuber.profile_image}`} alt={vtuber.vtubername} />
+          <img src={`http://localhost:5000/uploads/${vtuber.profile_image}`} alt={`${vtuber.vtubername} profile`} />
         </div>
       </div>
       <div className="vtuber-info">

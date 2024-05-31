@@ -162,9 +162,12 @@ const VtSoloBoard = () => {
           <Link to={`/vtuber/${vtuber.id}`} key={vtuber.id} className="vtuber-card">
             <img src={`http://localhost:5000/uploads/${vtuber.profile_image}`} alt={vtuber.vtubername} />
             <div className="vtuber-info">
+              {vtuber.category === '기업세' && <p className="company">{vtuber.company}</p>}
               <h2>{vtuber.vtubername}</h2>
-              <p>{vtuber.gender}</p>
-              <p>{vtuber.category}</p>
+              <div className="vttags">
+                <span className={`tag ${vtuber.gender === '여성' ? 'vt_female' : 'vt_male'}`}>#{vtuber.gender}</span>
+                <span className={`tag ${vtuber.category === '기업세' ? 'vt_corporate' : 'vt_individual'}`}>#{vtuber.category}</span>
+              </div>
             </div>
           </Link>
         ))}

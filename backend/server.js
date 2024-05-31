@@ -18,6 +18,8 @@ const profileImagePath = 'C:/Vtuber_imageDB/profile_image';
 const defaultImagePath = 'C:/Vtuber_imageDB/profile_default';
 const vtProfilePath = 'C:/Vtuber_imageDB/vt_profile';
 const vtHeaderPath = 'C:/Vtuber_imageDB/vt_header';
+const companyProfilePath = 'C:/Vtuber_imageDB/company_profile';
+const companyHeaderPath = 'C:/Vtuber_imageDB/company_header';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -27,6 +29,10 @@ const storage = multer.diskStorage({
       cb(null, vtHeaderPath);
     } else if (file.fieldname === 'profileImage') {
       cb(null, profileImagePath);
+    } else if (file.fieldname === 'companyProfileImage') {
+      cb(null, companyProfilePath);
+    } else if (file.fieldname === 'companyHeaderImage') {
+      cb(null, companyHeaderPath);
     }
   },
   filename: (req, file, cb) => {
@@ -41,6 +47,8 @@ app.use('/uploads', express.static(profileImagePath));
 app.use('/default', express.static(defaultImagePath));
 app.use('/uploads', express.static(vtProfilePath));
 app.use('/uploads', express.static(vtHeaderPath));
+app.use('/uploads', express.static(companyProfilePath));
+app.use('/uploads', express.static(companyHeaderPath));
 
 app.use(bodyParser.json());
 app.use(cors({
@@ -907,6 +915,104 @@ app.get('/birthdays/:month', async (req, res) => {
         console.error(err);
       }
     }
+  }
+});
+
+app.post('/company_register', upload.fields([{ name: 'companyProfileImage', maxCount: 1 }, { name: 'companyHeaderImage', maxCount: 1 }]), async (req, res) => {
+  const { companyName, companyTag, companyYoutubeLink, fanClub } = req.body;
+  const companyProfileImage = req.files.companyProfileImage ? req.files.companyProfileImage[0].filename : null;
+  const companyHeaderImage = req.files.companyHeaderImage ? req.files.companyHeaderImage[0].filename : null;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+
+    await connection.execute(
+      `INSERT INTO CompanyInfo (CompanyName, CompanyTag, CompanyYoutubeLink, FanClub, CompanyProfile, CompanyHeader) 
+       VALUES (:companyName, :companyTag, :companyYoutubeLink, :fanClub, :companyProfileImage, :companyHeaderImage)`,
+      { companyName, companyTag, companyYoutubeLink, fanClub, companyProfileImage, companyHeaderImage }
+    );
+
+    await connection.close();
+    res.status(200).json({ message: 'Company registered successfully.' });
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Error registering company', details: err.message });
+  }
+});
+
+app.get('/company_info', async (req, res) => {
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const result = await connection.execute('SELECT * FROM CompanyInfo');
+
+    await connection.close();
+
+    if (result.rows.length > 0) {
+      const companies = result.rows.map(row => ({
+        id: row[0],
+        companyName: row[1],
+        companyTag: row[2],
+        companyYoutubeLink: row[3],
+        fanClub: row[4],
+        companyProfile: row[5],
+        companyHeader: row[6]
+      }));
+      res.status(200).json(companies);
+    } else {
+      res.status(404).json({ message: 'No companies found' });
+    }
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Error fetching companies', details: err.message });
+  }
+});
+
+app.get('/company_info/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const companyResult = await connection.execute(
+      'SELECT * FROM CompanyInfo WHERE CompanyID = :id',
+      { id }
+    );
+
+    if (companyResult.rows.length === 0) {
+      res.status(404).json({ message: 'Company not found' });
+      await connection.close();
+      return;
+    }
+
+    const company = companyResult.rows[0];
+
+    const membersResult = await connection.execute(
+      'SELECT * FROM VtInfo WHERE Company = :companyName',
+      { companyName: company[1] }
+    );
+
+    await connection.close();
+
+    const members = membersResult.rows.map(row => ({
+      id: row[0],
+      vtubername: row[3],
+      debutdate: row[12],
+      profile_image: row[9]
+    }));
+
+    res.status(200).json({
+      company: {
+        id: company[0],
+        companyName: company[1],
+        companyTag: company[2],
+        companyYoutubeLink: company[3],
+        fanClub: company[4],
+        companyProfile: company[5],
+        companyHeader: company[6]
+      },
+      members
+    });
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Error fetching company details', details: err.message });
   }
 });
 

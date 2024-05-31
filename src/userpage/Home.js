@@ -15,6 +15,14 @@ const Home = () => {
     fetchBirthdays();
   }, [month, year]);
 
+  useEffect(() => {
+    if (showDropdown) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+  }, [showDropdown]);
+
   const fetchBirthdays = async () => {
     try {
       const response = await axios.get(`http://localhost:5000/birthdays/${month.toString().padStart(2, '0')}`);
@@ -103,22 +111,27 @@ const Home = () => {
 
   return (
     <div className="home-container">
-      <div className="header">
+      <div className="birthday_header">
         <h1 onClick={() => setShowDropdown(!showDropdown)}>
           {month}월에 생일인 버튜버 🎂 <span className="dropdown-icon">▼</span>
         </h1>
         <button onClick={handleTodayClick}>오늘</button>
         {showDropdown && (
-          <div className="dropdown">
-            {[...Array(12)].map((_, i) => (
-              <div
-                key={i + 1}
-                className="dropdown-item"
-                onClick={() => handleMonthChange(i + 1)}
-              >
-                {i + 1}월 생일
-              </div>
-            ))}
+          <div className="birthday_dropdown">
+            <div className="birthday_dropdown-header">
+              <button className="birthday_close-btn" onClick={() => setShowDropdown(false)}>X</button>
+            </div>
+            <div className="birthday_dropdown-content">
+              {[...Array(12)].map((_, i) => (
+                <div
+                  key={i + 1}
+                  className="birthday_dropdown-item"
+                  onClick={() => handleMonthChange(i + 1)}
+                >
+                  {i + 1}월 생일
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -156,11 +169,13 @@ const Home = () => {
           birthdaysForSelectedDay.map(birthday => (
             <div className="birthday-card" key={birthday[0]}>
               <img src={`http://localhost:5000/uploads/${birthday[2]}`} alt={birthday[0]} />
-              <p>{birthday[0]}님의 {birthday[1]} 생일을 축하합니다.</p>
+              <p>{birthday[0]}님의 {birthday[1]} 생일을 축하합니다 🎉 </p>
             </div>
           ))
         ) : (
+          <div className='nobirthdays'>
           <p>{month}월 {selectedDay}일에 생일을 맞이하는 버튜버가 없습니다.</p>
+          </div>
         )}
       </div>
     </div>

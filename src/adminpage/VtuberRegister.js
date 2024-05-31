@@ -11,7 +11,7 @@ const VtuberRegister = () => {
     age: '',
     mbti: '',
     platform: '',
-    role: '맴버',
+    role: '멤버',
     birthday: '',
     debutdate: '',
     youtubelink: '',
@@ -120,7 +120,7 @@ const VtuberRegister = () => {
           age: '',
           mbti: '',
           platform: '',
-          role: '맴버',
+          role: '멤버',
           birthday: '',
           debutdate: '',
           youtubelink: '',
@@ -231,7 +231,7 @@ const VtuberRegister = () => {
         <div className="form-group">
           <label>Role:</label>
           <div className="button-group">
-            <button type="button" onClick={() => handleRoleChange('맴버')} className={formData.role === '맴버' ? 'active' : ''}>맴버</button>
+            <button type="button" onClick={() => handleRoleChange('멤버')} className={formData.role === '멤버' ? 'active' : ''}>멤버</button>
             <button type="button" onClick={() => handleRoleChange('스태프')} className={formData.role === '스태프' ? 'active' : ''}>스태프</button>
             <button type="button" onClick={() => handleRoleChange('사장')} className={formData.role === '사장' ? 'active' : ''}>사장</button>
           </div>

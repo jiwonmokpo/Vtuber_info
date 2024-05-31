@@ -24,7 +24,7 @@ h1 {
 }
 
 .search-bar input {
-  width: 91%;
+  width: 87%;
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
@@ -96,42 +96,86 @@ h1 {
 
 .vtuber-card {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-decoration: none;
-  color: inherit;
-  width: 180px;
+  width: 301px;
+  height: 68px;
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 10px;
   background-color: #fff;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+  overflow: hidden;
+  align-items: center;
 }
 
 .vtuber-card:hover {
+  background-color: #eee;
   transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .vtuber-card img {
-  width: 100px;
-  height: 100px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   object-fit: cover;
 }
 
 .vtuber-info {
-  text-align: center;
+  display: flex;
+  margin-bottom: 50px;
+  margin-right: auto;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
 }
 
 .vtuber-info h2 {
-  font-size: 18px;
-  margin: 10px 0 5px;
+  font-size: 16px;
+  margin: 0;
+  color:#000;
+  font-weight: bold;
 }
 
 .vtuber-info p {
-  font-size: 14px;
+  margin: 2px 0;
+  font-size: 10px;
   color: #666;
-  margin: 0;
+}
+
+.vtuber-info .vttags {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.vtuber-info .tag {
+  display: inline-block;
+  padding: 5px 10px;
+  margin-right: 5px;
+  margin-bottom: 5px;
+  border-radius: 14px;
+  font-size: 12px;
+}
+
+.vt_female {
+  background-color: #FFC0CB;
+  color: #F560DD;
+}
+
+.vt_male {
+  background-color: rgba(96, 111, 245, 0.5);
+  color: #606FF5;
+}
+
+.vt_corporate {
+  background-color: #D1F0D1;
+  color: #1DC387;
+}
+
+.vt_individual {
+  background-color: rgba(69, 118, 163, 0.5);
+  color: #4576A3;
 }
 
 .filter-popup {

@@ -1,0 +1,112 @@
+/* board.css */
+
+@font-face {
+    font-family: "AppleSDGothicNeoB";
+    font-weight: normal;
+    src: url("../fonts/AppleSDGothicNeoB.ttf") format("truetype");
+  }
+  
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .container {
+    width: 80%;
+    margin: auto;
+    overflow: hidden;
+  }
+  
+  .bbsheader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0;
+  }
+  
+  .header h1 {
+    margin: 0;
+  }
+  
+  .post {
+    background-color: #fff;
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .post-info {
+    text-align: right;
+  }
+  
+  .post h2 {
+    margin: 0;
+  }
+  
+  .post h2 a {
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  .post p {
+    color: #555;
+  }
+  
+  .post p:first-of-type {
+    margin-top: 10px;
+  }
+  
+  .post .author {
+    font-style: italic;
+    color: #888;
+  }
+  
+  .post .date {
+    color: #aaa;
+    font-size: 0.9em;
+    margin-left: 10px;
+  }
+  
+  .pagination {
+    text-align: center;
+    margin: 20px 0;
+  }
+  
+  .pagination button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    margin: 0 5px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+  }
+  
+  .pagination button:hover {
+    background-color: #0056b3;
+  }
+  
+  .write-button a {
+    background-color: #28a745;
+    color: #fff;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+  }
+  
+  .write-button a:hover {
+    background-color: #218838;
+  }
+  
