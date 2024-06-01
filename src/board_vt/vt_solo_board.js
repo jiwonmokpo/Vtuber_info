@@ -5,6 +5,7 @@ import '../css/VtSoloBoard.css';
 
 const VtSoloBoard = () => {
   const [vtubers, setVtubers] = useState([]);
+  const [followStatus, setFollowStatus] = useState([]);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('');
   const [tempFilter, setTempFilter] = useState({ platform: '전체', category: '전체', gender: '전체', mbti: '전체' });
@@ -16,7 +17,7 @@ const VtSoloBoard = () => {
   useEffect(() => {
     const fetchVtubers = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/vtinfo');
+        const response = await axios.get('http://localhost:5000/vtinfo', { withCredentials: true });
         const sortedVtubers = response.data.sort((a, b) => {
           if (/^[A-Za-z]/.test(a.vtubername.charAt(0))) {
             return a.vtubername.localeCompare(b.vtubername);
@@ -29,7 +30,17 @@ const VtSoloBoard = () => {
       }
     };
 
+    const fetchFollowStatus = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/follow_status', { withCredentials: true });
+        setFollowStatus(response.data);
+      } catch (error) {
+        console.error('Error fetching follow status:', error);
+      }
+    };
+
     fetchVtubers();
+    fetchFollowStatus();
   }, []);
 
   const handleTempFilterChange = (type, value) => {
@@ -61,6 +72,23 @@ const VtSoloBoard = () => {
     if (gender !== '전체') count++;
     if (mbti !== '전체') count++;
     setFilterCount(count);
+  };
+
+  const handleFollow = async (vtuberId, isFollowing) => {
+    try {
+      if (isFollowing) {
+        await axios.post('http://localhost:5000/unfollow', { vtuberId }, { withCredentials: true });
+      } else {
+        await axios.post('http://localhost:5000/follow', { vtuberId }, { withCredentials: true });
+      }
+      setFollowStatus(prevFollowStatus =>
+        isFollowing
+          ? prevFollowStatus.filter(id => id !== vtuberId)
+          : [...prevFollowStatus, vtuberId]
+      );
+    } catch (error) {
+      console.error('Error following/unfollowing vtuber:', error);
+    }
   };
 
   const filteredVtubers = vtubers
@@ -159,17 +187,27 @@ const VtSoloBoard = () => {
       </div>
       <div className="vtuber-list">
         {filteredVtubers.map(vtuber => (
-          <Link to={`/vtuber/${vtuber.id}`} key={vtuber.id} className="vtuber-card">
-            <img src={`http://localhost:5000/uploads/${vtuber.profile_image}`} alt={vtuber.vtubername} />
-            <div className="vtuber-info">
-              {vtuber.category === '기업세' && <p className="company">{vtuber.company}</p>}
-              <h2>{vtuber.vtubername}</h2>
-              <div className="vttags">
-                <span className={`tag ${vtuber.gender === '여성' ? 'vt_female' : 'vt_male'}`}>#{vtuber.gender}</span>
-                <span className={`tag ${vtuber.category === '기업세' ? 'vt_corporate' : 'vt_individual'}`}>#{vtuber.category}</span>
+          <div className="vtuber-card-container" key={vtuber.id}>
+            <Link to={`/vtuber/${vtuber.id}`} className="vtuber-card">
+              <img src={`http://localhost:5000/uploads/${vtuber.profile_image}`} alt={vtuber.vtubername} />
+              <div className="vtuber-info">
+                {vtuber.category === '기업세' && <p className="company">{vtuber.company}</p>}
+                <h2>{vtuber.vtubername}</h2>
+                <div className="vttags">
+                  <span className={`tag ${vtuber.gender === '여성' ? 'vt_female' : 'vt_male'}`}>#{vtuber.gender}</span>
+                  <span className={`tag ${vtuber.category === '기업세' ? 'vt_corporate' : 'vt_individual'}`}>#{vtuber.category}</span>
+                </div>
               </div>
-            </div>
-          </Link>
+            </Link>
+            <button 
+              className={`vt-follow-button ${followStatus.includes(vtuber.id) ? 'active' : ''}`} 
+              onClick={() => handleFollow(vtuber.id, followStatus.includes(vtuber.id))}
+            >
+              <svg viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+            </button>
+          </div>
         ))}
       </div>
       {showFilterPopup && (
@@ -220,29 +258,7 @@ const VtSoloBoard = () => {
             </div>
             {mbtiType && (
               <div className="mbti-buttons-expanded">
-                {mbtiType === 'E' ? (
-                  <>
-                    <button className={tempFilter.mbti === 'ESTP' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', 'ESTP')}>ESTP</button>
-                    <button className={tempFilter.mbti === 'ESTJ' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', 'ESTJ')}>ESTJ</button>
-                    <button className={tempFilter.mbti === 'ESFP' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', 'ESFP')}>ESFP</button>
-                    <button className={tempFilter.mbti === 'ESFJ' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', 'ESFJ')}>ESFJ</button>
-                    <button className={tempFilter.mbti === 'ENTP' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', 'ENTP')}>ENTP</button>
-                    <button className={tempFilter.mbti === 'ENTJ' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', 'ENTJ')}>ENTJ</button>
-                    <button className={tempFilter.mbti === 'ENFP' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', 'ENFP')}>ENFP</button>
-                    <button className={tempFilter.mbti === 'ENFJ' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', 'ENFJ')}>ENFJ</button>
-                  </>
-                ) : (
-                  <>
-                    <button className={tempFilter.mbti === 'ISTP' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', 'ISTP')}>ISTP</button>
-                    <button className={tempFilter.mbti === 'ISTJ' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', 'ISTJ')}>ISTJ</button>
-                    <button className={tempFilter.mbti === 'ISFP' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', 'ISFP')}>ISFP</button>
-                    <button className={tempFilter.mbti === 'ISFJ' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', 'ISFJ')}>ISFJ</button>
-                    <button className={tempFilter.mbti === 'INTP' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', 'INTP')}>INTP</button>
-                    <button className={tempFilter.mbti === 'INTJ' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', 'INTJ')}>INTJ</button>
-                    <button className={tempFilter.mbti === 'INFP' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', 'INFP')}>INFP</button>
-                    <button className={tempFilter.mbti === 'INFJ' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', 'INFJ')}>INFJ</button>
-                  </>
-                )}
+                {mbtiOptions}
               </div>
             )}
           </div>

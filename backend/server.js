@@ -1016,6 +1016,110 @@ app.get('/company_info/:id', async (req, res) => {
   }
 });
 
+// 팔로우 엔드포인트
+app.post('/follow', authenticate, async (req, res) => {
+  const { vtuberId } = req.body;
+  const username = req.session.user.username;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+
+    // 팔로우 추가
+    await connection.execute(
+      `INSERT INTO follows (username, vtuber_id) VALUES (:username, :vtuber_id)`,
+      { username, vtuber_id: vtuberId }
+    );
+
+    await connection.close();
+    res.status(200).json({ message: '팔로우 성공' });
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: '팔로우 중 오류가 발생했습니다.', details: err.message });
+  }
+});
+
+// 팔로우 상태 가져오기 엔드포인트
+app.get('/follow_status', authenticate, async (req, res) => {
+  const username = req.session.user.username;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const result = await connection.execute(
+      `SELECT vtuber_id FROM follows WHERE username = :username`,
+      { username }
+    );
+
+    const followStatus = result.rows.map(row => row[0]);
+
+    await connection.close();
+    res.status(200).json(followStatus);
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: '팔로우 상태 조회 중 오류가 발생했습니다.', details: err.message });
+  }
+});
+
+// 언팔로우 엔드포인트
+app.post('/unfollow', authenticate, async (req, res) => {
+  const { vtuberId } = req.body;
+  const username = req.session.user.username;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+
+    // 팔로우 삭제
+    await connection.execute(
+      `DELETE FROM follows WHERE username = :username AND vtuber_id = :vtuber_id`,
+      { username, vtuber_id: vtuberId }
+    );
+
+    await connection.close();
+    res.status(200).json({ message: '언팔로우 성공' });
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: '언팔로우 중 오류가 발생했습니다.', details: err.message });
+  }
+});
+
+// 팔로우 목록 조회 엔드포인트
+app.get('/follows', authenticate, async (req, res) => {
+  const username = req.session.user.username;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const result = await connection.execute(
+      `SELECT v.*, 1 as isFollowing FROM follows f JOIN vtinfo v ON f.vtuber_id = v.id WHERE f.username = :username`,
+      { username }
+    );
+
+    const follows = result.rows.map(row => ({
+      id: row[0],
+      category: row[1],
+      company: row[2],
+      vtubername: row[3],
+      gender: row[4],
+      age: row[5],
+      mbti: row[6],
+      platform: row[7],
+      role: row[8],
+      profile_image: row[9],
+      header_image: row[10],
+      birthday: row[11],
+      debutdate: row[12],
+      youtubelink: row[13],
+      platformlink: row[14],
+      xlink: row[15],
+      isFollowing: row[16]
+    }));
+
+    await connection.close();
+    res.status(200).json(follows);
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: '팔로우 목록 조회 중 오류가 발생했습니다.', details: err.message });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

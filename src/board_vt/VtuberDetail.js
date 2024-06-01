@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import '../css/VtuberDetail.css';
@@ -11,6 +11,7 @@ const VtuberDetail = () => {
   const { id } = useParams();
   const [vtuber, setVtuber] = useState(null);
   const [showFullHeader, setShowFullHeader] = useState(false);
+  const headerRef = useRef(null);
 
   useEffect(() => {
     const fetchVtuber = async () => {
@@ -24,6 +25,15 @@ const VtuberDetail = () => {
 
     fetchVtuber();
   }, [id]);
+
+  const handleToggleHeader = () => {
+    setShowFullHeader(!showFullHeader);
+    if (!showFullHeader) {
+      setTimeout(() => {
+        headerRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 300); 
+    }
+  };
 
   if (!vtuber) {
     return <div>Loading...</div>;
@@ -50,9 +60,9 @@ const VtuberDetail = () => {
   return (
     <div className="vtuber-detail-container">
       <div className="vtuber-header">
-        <div className={`header-image ${showFullHeader ? 'full' : 'half'}`}>
+        <div className={`header-image ${showFullHeader ? 'full' : 'half'}`} ref={headerRef}>
           <img src={`http://localhost:5000/uploads/${vtuber.header_image}`} alt={`${vtuber.vtubername} header`} />
-          <button onClick={() => setShowFullHeader(!showFullHeader)} className="toggle-button">
+          <button onClick={handleToggleHeader} className="toggle-button">
             {showFullHeader ? '간략히 보기' : '전체 보기'}
           </button>
         </div>

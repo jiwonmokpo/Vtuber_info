@@ -94,6 +94,10 @@ h1 {
   gap: 20px;
 }
 
+.vtuber-card-container {
+  position: relative;
+}
+
 .vtuber-card {
   display: flex;
   width: 301px;
@@ -134,7 +138,7 @@ h1 {
 .vtuber-info h2 {
   font-size: 16px;
   margin: 0;
-  color:#000;
+  color: #000;
   font-weight: bold;
 }
 
@@ -258,4 +262,23 @@ h1 {
   color: #fff;
   border: 1px solid #4caf50;
   width: 150px;
+}
+
+.vt-follow-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.vt-follow-button svg {
+  width: 24px;
+  height: 24px;
+  fill: #ccc;
+}
+
+.vt-follow-button.active svg {
+  fill: #f44336;
 }
