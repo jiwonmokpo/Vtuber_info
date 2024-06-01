@@ -118,7 +118,7 @@ const authenticate = (req, res, next) => {
 
 // 회원가입
 app.post('/register', async (req, res) => {
-  const { username, password, email } = req.body;
+  const { username, password, email, gender, membermbti } = req.body;
 
   try {
     const hashedPassword = createPasswordHash(password);
@@ -138,8 +138,9 @@ app.post('/register', async (req, res) => {
     }
 
     await connection.execute(
-      `INSERT INTO member (username, password, email, emailcheck) VALUES (:username, :password, :email, 0)`,
-      [username, hashedPassword, email]
+      `INSERT INTO member (username, password, email, gender, membermbti, emailcheck) 
+       VALUES (:username, :password, :email, :gender, :membermbti, 0)`,
+      [username, hashedPassword, email, gender, membermbti]
     );
 
     // 이메일 인증 링크 전송
