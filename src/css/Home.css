@@ -1,15 +1,66 @@
-/* Existing CSS remains unchanged */
-@font-face {
-  font-family: "AppleSDGothicNeoB";
-  font-weight: normal;
-  src: url("../fonts/AppleSDGothicNeoB.ttf") format("truetype");
-}
-
 .home-container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  margin-left: 80px;
+}
+
+@media (max-width: 768px) {
+  .home-vtuber-sections {
+    flex-direction: column;
+  }
+}
+
+.home-vtuber-sections {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 40px;
+}
+
+.home-vtuber-section {
+  flex: 1;
+  margin-right: 20px;
+}
+
+.home-vtuber-section:last-child {
+  margin-right: 0;
+}
+
+.home-vtuber-section h2 {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.home-vtuber-list {
+  display: flex;
+  gap: 20px;
+}
+
+.home-vtuber-card {
+  width: 88px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-size: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.home-vtuber-card img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
+
+.vtuber-card p {
+  font-size: 16px;
+  font-weight: bold;
+  margin-left: 10px;
 }
 
 .birthday_header {
@@ -21,12 +72,13 @@
 .birthday_header h1 {
   font-size: 24px;
   cursor: pointer;
+  font-weight: bold;
+  margin-bottom: 10px;
 }
 
 .birthday_header .dropdown-icon {
   font-size: 16px;
 }
-
 
 .birthday_dropdown {
   position: fixed;
@@ -50,7 +102,7 @@
 
 .birthday_dropdown-item {
   padding: 10px 10px;
-  cursor: pointer;
+  cursor: pointer;  
   font-family: "AppleSDGothicNeoB";
 }
 
@@ -64,6 +116,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  width: 100%;
 }
 
 .month-selector button {
@@ -81,12 +134,13 @@
 .weekdays, .days {
   display: flex;
   justify-content: space-between;
+  width: 100%;
 }
 
 .day-container {
-  width: 10%;
+  flex: 1;
   text-align: center;
-  padding: 10px 0;
+  padding: 18px 0;
   margin: 5px;
   cursor: pointer;
   transition: background-color 0.3s;
@@ -126,113 +180,29 @@
   background-color: #6F4CF9;
   border-radius: 50%;
   position: absolute;
-  top: 0;
-}
-.home-container {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  margin-left: 50px;
-}
-
-.dropdown {
-  position: absolute;
-  top: 60px;
-  left: 20px;
-  background: white;
-  border: 1px solid #ccc;
-  padding: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.dropdown-item {
-  padding: 5px 10px;
-  cursor: pointer;
-}
-
-.dropdown-item:hover {
-  background: #f0f0f0;
-}
-
-.month-selector {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.month-selector button {
-  padding: 10px 20px;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.calendar {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-
-.weekdays, .days {
-  display: flex;
-  justify-content: space-between;
-}
-
-.day-container {
-  width: 14%;
-  text-align: center;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.weekday, .day {
-  padding: 10px 0;
-}
-
-.day {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 5px;
-  border-radius: 10px;
-  background-color: transparent;
-}
-
-.day.selected {
-  color: #6F4CF9;
-}
-
-.weekday.today {
-  color: #6F4CF9;
-  position: relative;
-}
-
-.weekday.today::after,
-.weekday.selected::after {
-  content: '';
-  display: block;
-  width: 6px;
-  height: 6px;
-  background-color: #6F4CF9;
-  border-radius: 50%;
-  position: absolute;
-  top: 0;
+  top: -10px;
   left: 50%;
   transform: translateX(-50%);
 }
 
 .birthdays {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  margin-top: 40px;
+  width: 110%;
+}
+
+.birthday-card-container {
+  display: flex;
   flex-wrap: wrap;
-  width: 900px;
-  height: 296px;
   gap: 20px;
 }
 
 .birthday-card {
-  width:310.4px;
-  height: 296px;
+  width: 240px;
+  max-width: 1200px;
   background: linear-gradient(145deg, #f3e6ff, #ffcce6);
   padding: 20px;
   text-align: center;
@@ -258,25 +228,66 @@
 .nobirthdays {
   font-size: 20px;
   justify-content: center;
-  padding-top: 130px;
-  padding-left: 450px;
   color: #ccc;
+  margin-top: 110px;
 }
+
 .birthday_close-btn {
-  background: #f44336;
-  color: white;
+  background-color: #fff;
+  color: #ccc;
   border: none;
-  padding: 10px 10px;
+  padding: 6px 10px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 18px;
   border-radius: 5px;
   position: relative;
+  left:330px
 }
 
 .birthday_close-btn:hover {
-  background: #d32f2f;
+  background: #333;
+  border-radius: 10px;
 }
 
 body.fixed {
   overflow: hidden;
+}
+
+.notbrithday {
+  font-size: 16px;
+  color: #ccc;
+}
+
+.today_button {
+  padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #ccc;
+    color: white;
+    cursor: pointer;
+    width: 50px;
+    height: 40px;
+    position: relative;
+    left:975px;
+}
+
+.home-move-button {
+  padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+}
+
+.home-Recommended-guide {
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 50px;
+  margin-left: 200px;
+}
+
+.home-vtuber-text{
+  text-decoration: none;
+  
 }

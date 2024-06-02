@@ -4,7 +4,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import { FaHeart, FaCommentDots, FaReply, FaEdit, FaTrashAlt } from 'react-icons/fa';
 import DOMPurify from 'dompurify';
-// CSS 관련 import
 import userIcon from '../image/user.png';
 import '../css/PostDetail.css';
 
@@ -68,7 +67,6 @@ const PostDetail = () => {
       setNewComment('');
       setReplyComment({ ...replyComment, [parentId]: '' });
       fetchComments();
-      // 대댓글 작성 완료 후 폼 닫기
       if (parentId) {
         setReplyComment((prevState) => ({
           ...prevState,
@@ -124,21 +122,21 @@ const PostDetail = () => {
     return comments
       .filter(comment => comment.parentId === parentId)
       .map(comment => (
-        <div key={comment.id} className="comment" style={{ marginLeft: parentId ? '40px' : '0px' }}>
-          <img src={userIcon} alt="User" className="comment-user-image" />
-          <div className="comment-content">
+        <div key={comment.id} className="boardDt-comment" style={{ marginLeft: parentId ? '40px' : '0px' }}>
+          <img src={userIcon} alt="User" className="boardDt-comment-user-image" />
+          <div className="boardDt-comment-content">
             <span>{comment.userId}</span>
             <p>{comment.content}</p>
-            <div className="comment-actions">
+            <div className="boardDt-comment-actions">
               <span>{new Date(comment.createdAt).toLocaleString()}</span>
               {auth.loggedIn && (
-                <button onClick={() => toggleReply(comment.id)} className="reply-button">
+                <button onClick={() => toggleReply(comment.id)} className="boardDt-reply-button">
                   <FaReply /> 답글쓰기
                 </button>
               )}
             </div>
             {replyComment[`open-${comment.id}`] && (
-              <form onSubmit={(e) => handleCommentSubmit(e, comment.id)} className="reply-form">
+              <form onSubmit={(e) => handleCommentSubmit(e, comment.id)} className="boardDt-reply-form">
                 <textarea
                   value={replyComment[comment.id]}
                   onChange={(e) => handleReplyChange(e, comment.id)}
@@ -154,34 +152,34 @@ const PostDetail = () => {
   };
 
   return (
-    <div className="post-detail">
+    <div className="boardDt-post-detail">
       {post && (
         <>
-          <div className="post-header">
+          <div className="boardDt-post-header">
             <img src={userIcon} alt="User" />
-            <div className="post-user-info">
+            <div className="boardDt-post-user-info">
               <span>{post.username}</span>
               <span>{new Date(post.created_at).toLocaleString()}</span>
             </div>
           </div>
-          <div className="post-content">
+          <div className="boardDt-post-content">
             <p dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}></p>
           </div>
-          <div className="post-actions">
+          <div className="boardDt-post-actions">
             <span><FaCommentDots /> 조회수: {post.views}</span>
             <span><FaHeart /> 추천수: {post.likes}</span>
-            <button onClick={handleLike} className="like-button"><FaHeart /> 좋아요</button>
+            <button onClick={handleLike} className="boardDt-like-button"><FaHeart /> 좋아요</button>
             {isOwner && (
               <>
-                <button onClick={handleEdit} className="edit-button"><FaEdit /> 수정</button>
-                <button onClick={handleDelete} className="delete-button"><FaTrashAlt /> 삭제</button>
+                <button onClick={handleEdit} className="boardDt-edit-button"><FaEdit /> 수정</button>
+                <button onClick={handleDelete} className="boardDt-delete-button"><FaTrashAlt /> 삭제</button>
               </>
             )}
           </div>
         </>
       )}
 
-      <div className="comments">
+      <div className="boardDt-comments">
         <h2>댓글</h2>
         {renderComments(comments)}
       </div>
@@ -192,9 +190,9 @@ const PostDetail = () => {
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             placeholder="댓글을 입력하세요"
-            className="comment-textarea"
+            className="boardDt-comment-textarea"
           ></textarea>
-          <button type="submit" className="comment-submit-button">댓글 작성</button>
+          <button type="submit" className="boardDt-comment-submit-button">댓글 작성</button>
         </form>
       )}
     </div>

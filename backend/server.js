@@ -1121,6 +1121,153 @@ app.get('/follows', authenticate, async (req, res) => {
   }
 });
 
+// 랜덤 버튜버 가져오기 엔드포인트
+app.get('/random-vtubers', async (req, res) => {
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const result = await connection.execute(
+      `SELECT * FROM (
+         SELECT * FROM vtinfo
+         ORDER BY DBMS_RANDOM.RANDOM
+       ) WHERE ROWNUM <= 5`
+    );
+
+    const vtubers = result.rows.map(row => ({
+      id: row[0],
+      category: row[1],
+      company: row[2],
+      vtubername: row[3],
+      gender: row[4],
+      age: row[5],
+      mbti: row[6],
+      platform: row[7],
+      role: row[8],
+      profile_image: row[9],
+      header_image: row[10],
+      birthday: row[11],
+      debutdate: row[12],
+      youtubelink: row[13],
+      platformlink: row[14],
+      xlink: row[15]
+    }));
+
+    res.status(200).json(vtubers);
+    await connection.close();
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Error fetching random vtubers', details: err.message });
+  }
+});
+
+//MBTI 궁합도 점수
+const calculateMbtiCompatibility = (userMbti, vtuberMbti) => {
+  const compatibilityMatrix = {
+    'INTJ': { 'INTJ': 70, 'INTP': 80, 'ENTJ': 85, 'ENTP': 75, 'INFJ': 90, 'INFP': 85, 'ENFJ': 65, 'ENFP': 70, 'ISTJ': 60, 'ISFJ': 65, 'ESTJ': 55, 'ESFJ': 50, 'ISTP': 75, 'ISFP': 70, 'ESTP': 65, 'ESFP': 60 },
+    'INTP': { 'INTJ': 80, 'INTP': 70, 'ENTJ': 75, 'ENTP': 85, 'INFJ': 75, 'INFP': 90, 'ENFJ': 65, 'ENFP': 70, 'ISTJ': 65, 'ISFJ': 60, 'ESTJ': 55, 'ESFJ': 50, 'ISTP': 80, 'ISFP': 75, 'ESTP': 70, 'ESFP': 65 },
+    'ENTJ': { 'INTJ': 85, 'INTP': 75, 'ENTJ': 70, 'ENTP': 80, 'INFJ': 65, 'INFP': 60, 'ENFJ': 90, 'ENFP': 85, 'ISTJ': 80, 'ISFJ': 75, 'ESTJ': 85, 'ESFJ': 70, 'ISTP': 65, 'ISFP': 60, 'ESTP': 75, 'ESFP': 70 },
+    'ENTP': { 'INTJ': 75, 'INTP': 85, 'ENTJ': 80, 'ENTP': 70, 'INFJ': 65, 'INFP': 70, 'ENFJ': 85, 'ENFP': 90, 'ISTJ': 55, 'ISFJ': 60, 'ESTJ': 70, 'ESFJ': 75, 'ISTP': 80, 'ISFP': 85, 'ESTP': 90, 'ESFP': 65 },
+    'INFJ': { 'INTJ': 90, 'INTP': 75, 'ENTJ': 65, 'ENTP': 65, 'INFJ': 70, 'INFP': 80, 'ENFJ': 85, 'ENFP': 75, 'ISTJ': 80, 'ISFJ': 85, 'ESTJ': 55, 'ESFJ': 60, 'ISTP': 70, 'ISFP': 75, 'ESTP': 50, 'ESFP': 55 },
+    'INFP': { 'INTJ': 85, 'INTP': 90, 'ENTJ': 60, 'ENTP': 70, 'INFJ': 80, 'INFP': 70, 'ENFJ': 75, 'ENFP': 85, 'ISTJ': 65, 'ISFJ': 70, 'ESTJ': 50, 'ESFJ': 55, 'ISTP': 75, 'ISFP': 80, 'ESTP': 65, 'ESFP': 60 },
+    'ENFJ': { 'INTJ': 65, 'INTP': 65, 'ENTJ': 90, 'ENTP': 85, 'INFJ': 85, 'INFP': 75, 'ENFJ': 70, 'ENFP': 80, 'ISTJ': 70, 'ISFJ': 75, 'ESTJ': 85, 'ESFJ': 80, 'ISTP': 60, 'ISFP': 65, 'ESTP': 75, 'ESFP': 85 },
+    'ENFP': { 'INTJ': 70, 'INTP': 70, 'ENTJ': 85, 'ENTP': 90, 'INFJ': 75, 'INFP': 85, 'ENFJ': 80, 'ENFP': 70, 'ISTJ': 50, 'ISFJ': 55, 'ESTJ': 75, 'ESFJ': 85, 'ISTP': 65, 'ISFP': 60, 'ESTP': 90, 'ESFP': 80 },
+    'ISTJ': { 'INTJ': 60, 'INTP': 65, 'ENTJ': 80, 'ENTP': 55, 'INFJ': 80, 'INFP': 65, 'ENFJ': 70, 'ENFP': 50, 'ISTJ': 70, 'ISFJ': 85, 'ESTJ': 85, 'ESFJ': 75, 'ISTP': 60, 'ISFP': 65, 'ESTP': 75, 'ESFP': 80 },
+    'ISFJ': { 'INTJ': 65, 'INTP': 60, 'ENTJ': 75, 'ENTP': 60, 'INFJ': 85, 'INFP': 70, 'ENFJ': 75, 'ENFP': 55, 'ISTJ': 85, 'ISFJ': 70, 'ESTJ': 75, 'ESFJ': 80, 'ISTP': 65, 'ISFP': 80, 'ESTP': 70, 'ESFP': 85 },
+    'ESTJ': { 'INTJ': 55, 'INTP': 55, 'ENTJ': 85, 'ENTP': 70, 'INFJ': 55, 'INFP': 50, 'ENFJ': 85, 'ENFP': 75, 'ISTJ': 85, 'ISFJ': 75, 'ESTJ': 70, 'ESFJ': 65, 'ISTP': 75, 'ISFP': 70, 'ESTP': 90, 'ESFP': 80 },
+    'ESFJ': { 'INTJ': 50, 'INTP': 50, 'ENTJ': 70, 'ENTP': 75, 'INFJ': 60, 'INFP': 55, 'ENFJ': 80, 'ENFP': 85, 'ISTJ': 75, 'ISFJ': 80, 'ESTJ': 65, 'ESFJ': 70, 'ISTP': 70, 'ISFP': 85, 'ESTP': 80, 'ESFP': 90 },
+    'ISTP': { 'INTJ': 75, 'INTP': 80, 'ENTJ': 65, 'ENTP': 80, 'INFJ': 70, 'INFP': 75, 'ENFJ': 60, 'ENFP': 65, 'ISTJ': 60, 'ISFJ': 65, 'ESTJ': 75, 'ESFJ': 70, 'ISTP': 70, 'ISFP': 85, 'ESTP': 90, 'ESFP': 80 },
+    'ISFP': { 'INTJ': 70, 'INTP': 75, 'ENTJ': 60, 'ENTP': 85, 'INFJ': 75, 'INFP': 80, 'ENFJ': 65, 'ENFP': 60, 'ISTJ': 65, 'ISFJ': 80, 'ESTJ': 70, 'ESFJ': 85, 'ISTP': 85, 'ISFP': 70, 'ESTP': 80, 'ESFP': 90 },
+    'ESTP': { 'INTJ': 65, 'INTP': 70, 'ENTJ': 75, 'ENTP': 90, 'INFJ': 50, 'INFP': 65, 'ENFJ': 75, 'ENFP': 90, 'ISTJ': 75, 'ISFJ': 70, 'ESTJ': 90, 'ESFJ': 80, 'ISTP': 90, 'ISFP': 80, 'ESTP': 70, 'ESFP': 85 },
+    'ESFP': { 'INTJ': 60, 'INTP': 65, 'ENTJ': 70, 'ENTP': 80, 'INFJ': 55, 'INFP': 60, 'ENFJ': 85, 'ENFP': 80, 'ISTJ': 80, 'ISFJ': 85, 'ESTJ': 80, 'ESFJ': 90, 'ISTP': 80, 'ISFP': 90, 'ESTP': 85, 'ESFP': 70 }
+  };
+
+  if (compatibilityMatrix[userMbti] && compatibilityMatrix[userMbti][vtuberMbti] !== undefined) {
+    return compatibilityMatrix[userMbti][vtuberMbti];
+  }
+  return 50; // 기본 궁합 점수
+};
+
+
+app.get('/recommend-vtubers', authenticate, async (req, res) => {
+  const username = req.session.user.username;
+
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+
+    // 사용자의 정보 가져오기
+    const userResult = await connection.execute(
+      'SELECT gender, membermbti FROM member WHERE username = :username',
+      { username }
+    );
+
+    if (userResult.rows.length === 0) {
+      await connection.close();
+      return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+    }
+
+    const userGender = userResult.rows[0][0];
+    const userMbti = userResult.rows[0][1];
+
+    // 사용자가 팔로우한 버튜버 목록 가져오기
+    const followResult = await connection.execute(
+      'SELECT vtuber_id FROM follows WHERE username = :username',
+      { username }
+    );
+
+    const followedVtubers = followResult.rows.map(row => row[0]);
+
+    // 나와 맞는 버튜버 추천 로직
+    const vtuberResult = await connection.execute('SELECT id, gender, mbti, profile_image, vtubername FROM vtinfo');
+    const vtubers = vtuberResult.rows.map(row => ({
+      id: row[0],
+      gender: row[1],
+      mbti: row[2],
+      profile_image: row[3],
+      vtubername: row[4],
+      compatibility: calculateMbtiCompatibility(userMbti, row[2])
+    }));
+
+    // 팔로우 여부 점수 추가
+    vtubers.forEach(vtuber => {
+      if (followedVtubers.includes(vtuber.id)) {
+        vtuber.compatibility += 100; // 팔로우한 버튜버에게 추가 점수 부여
+      }
+    });
+
+    // 성별 점수 추가
+    vtubers.forEach(vtuber => {
+      if (vtuber.gender !== userGender) {
+        vtuber.compatibility += 10; // 성별이 다르면 추가 점수 부여
+      }
+    });
+
+    // 이미 팔로우한 버튜버는 제외
+    const filteredVtubers = vtubers.filter(vtuber => !followedVtubers.includes(vtuber.id));
+
+    // 점수에 따라 정렬 후 상위 5명의 버튜버를 추천
+    filteredVtubers.sort((a, b) => b.compatibility - a.compatibility);
+    const recommendedVtubers = filteredVtubers.slice(0, 5);
+
+    await connection.close();
+    res.status(200).json(recommendedVtubers);
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: '추천 버튜버 조회 중 오류가 발생했습니다.', details: err.message });
+  }
+});
+
+app.get('/vtubers/count', async (req, res) => {
+  try {
+    const connection = await oracledb.getConnection(dbConfig);
+    const result = await connection.execute('SELECT COUNT(*) AS count FROM vtinfo');
+    const count = result.rows[0][0];
+    res.status(200).json({ count });
+    await connection.close();
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Failed to fetch VTuber count' });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

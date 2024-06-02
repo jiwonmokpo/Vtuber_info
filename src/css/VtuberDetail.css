@@ -77,7 +77,7 @@
 
 .tag-female {
   background-color: pink;
-  color:#F560DD;
+  color: #F560DD;
 }
 
 .tag-male {
@@ -90,7 +90,7 @@
 
 .tag-company {
   background-color: #d1f0d1;
-  color:#1DC387;
+  color: #1DC387;
 }
 
 .dates {
@@ -162,4 +162,16 @@
   border: none;
   border-radius: 5px;
   cursor: pointer;
+}
+
+.follow-button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.follow-button svg {
+  width: 24px;
+  height: 24px;
 }

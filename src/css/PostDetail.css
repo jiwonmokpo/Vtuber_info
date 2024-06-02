@@ -1,4 +1,3 @@
-/* 스타일 초기화 */
 body, h1, h2, p, ul, li, textarea, button {
   margin: 0;
   padding: 0;
@@ -6,7 +5,7 @@ body, h1, h2, p, ul, li, textarea, button {
 }
 
 /* 게시물 스타일 */
-.post-detail {
+.boardDt-post-detail {
   width: 600px;
   margin: 20px auto;
   padding: 20px;
@@ -15,125 +14,122 @@ body, h1, h2, p, ul, li, textarea, button {
   background-color: #fff;
 }
 
-.post-header {
+.boardDt-post-header {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
 }
 
-.post-header img {
+.boardDt-post-header img {
   width: 50px;
   height: 50px;
   border-radius: 50%;
   margin-right: 10px;
 }
 
-.post-header .post-user-info {
+.boardDt-post-header .boardDt-post-user-info {
   display: flex;
   flex-direction: column;
 }
 
-.post-header .post-user-info span {
+.boardDt-post-header .boardDt-post-user-info span {
   font-weight: bold;
 }
 
-.post-content {
+.boardDt-post-content {
   margin: 20px 0;
 }
 
-.post-actions {
+.boardDt-post-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.post-actions button {
+.boardDt-post-actions button {
   background: none;
   border: none;
   color: #007bff;
   cursor: pointer;
 }
 
-.post-actions button:hover {
+.boardDt-post-actions button:hover {
   text-decoration: underline;
 }
 
-.like-button {
+.boardDt-like-button {
   background: none;
   border: none;
   color: #ff0000;
   cursor: pointer;
 }
 
-.like-button:hover {
+.boardDt-like-button:hover {
   text-decoration: underline;
 }
 
 /* 댓글 스타일 */
-.comments {
+.boardDt-comments {
   margin-top: 20px;
 }
 
-.comment {
+.boardDt-comment {
   display: flex;
   align-items: flex-start;
   margin-bottom: 20px;
-  /* Remove border-bottom and padding-bottom to eliminate the lines */
-  /* border-bottom: 1px solid #eee; */
-  /* padding-bottom: 10px; */
 }
 
-.comment img.comment-user-image {
+.boardDt-comment img.boardDt-comment-user-image {
   width: 30px;
   height: 30px;
   border-radius: 50%;
   margin-right: 10px;
 }
 
-.comment-content {
+.boardDt-comment-content {
   display: flex;
   flex-direction: column;
 }
 
-.comment-content span {
+.boardDt-comment-content span {
   font-weight: bold;
   margin-right: 5px;
 }
 
-.comment-actions {
+.boardDt-comment-actions {
   display: flex;
   align-items: center;
   margin-top: 5px;
 }
 
-.comment-actions span {
+.boardDt-comment-actions span {
   color: #888;
   margin-left: 10px;
 }
 
-.reply-button {
+.boardDt-reply-button {
   background: none;
   border: none;
   color: #007bff;
   cursor: pointer;
 }
 
-.reply-button:hover {
+.boardDt-reply-button:hover {
   text-decoration: underline;
 }
 
-.reply-form {
+.boardDt-reply-form {
   margin-left: 40px;
   margin-top: 10px;
 }
 
-.reply-form textarea {
+.boardDt-reply-form textarea {
   width: 100%;
   height: 40px;
   margin-bottom: 10px;
 }
 
-.reply-form button {
+.boardDt-reply-form button {
   background: #007bff;
   border: none;
   color: #fff;
@@ -142,7 +138,7 @@ body, h1, h2, p, ul, li, textarea, button {
   cursor: pointer;
 }
 
-.reply-form button:hover {
+.boardDt-reply-form button:hover {
   background: #0056b3;
 }
 
@@ -161,8 +157,4 @@ button {
   background-color: #007bff;
   color: white;
   cursor: pointer;
-}
-
-button:hover {
-  background-color: #0056b3;
 }

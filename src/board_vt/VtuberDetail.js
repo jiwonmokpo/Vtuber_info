@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import { AuthContext } from '../App';
 import '../css/VtuberDetail.css';
 import youtubeIcon from '../image/youtube.svg';
 import afreecaIcon from '../image/afreeca.svg';
@@ -9,15 +10,21 @@ import xIcon from '../image/x.svg';
 
 const VtuberDetail = () => {
   const { id } = useParams();
+  const { auth } = useContext(AuthContext);
   const [vtuber, setVtuber] = useState(null);
+  const [isFollowing, setIsFollowing] = useState(false);
   const [showFullHeader, setShowFullHeader] = useState(false);
   const headerRef = useRef(null);
 
   useEffect(() => {
     const fetchVtuber = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/vtinfo/${id}`);
+        const response = await axios.get(`http://localhost:5000/vtinfo/${id}`, { withCredentials: true });
         setVtuber(response.data);
+        // 팔로우 상태를 가져오는 부분 추가
+        const followResponse = await axios.get('http://localhost:5000/follow_status', { withCredentials: true });
+        const isFollowed = followResponse.data.includes(Number(id));
+        setIsFollowing(isFollowed);
       } catch (error) {
         console.error('Error fetching Vtuber:', error);
       }
@@ -25,6 +32,22 @@ const VtuberDetail = () => {
 
     fetchVtuber();
   }, [id]);
+
+  const handleFollow = async () => {
+    try {
+      if (isFollowing) {
+        await axios.post('http://localhost:5000/unfollow', { vtuberId: id }, { withCredentials: true });
+      } else {
+        await axios.post('http://localhost:5000/follow', { vtuberId: id }, { withCredentials: true });
+      }
+      // 팔로우 상태를 다시 가져오기
+      const followResponse = await axios.get('http://localhost:5000/follow_status', { withCredentials: true });
+      const isFollowed = followResponse.data.includes(Number(id));
+      setIsFollowing(isFollowed);
+    } catch (error) {
+      console.error('Error following/unfollowing vtuber:', error);
+    }
+  };
 
   const handleToggleHeader = () => {
     setShowFullHeader(!showFullHeader);
@@ -72,10 +95,23 @@ const VtuberDetail = () => {
       </div>
       <div className="vtuber-info">
         <div className="tags">
-          <span className={`tag ${vtuber.gender === '여성' ? 'tag-female' : 'tag-male'}`}>{vtuber.gender}</span>
-          <span className={`tag ${vtuber.category === '개인세' ? 'tag-individual' : 'tag-company'}`}>{vtuber.category}</span>
+          <span className={`tag ${vtuber.gender === '여성' ? 'tag-female' : 'tag-male'}`}>#{vtuber.gender}</span>
+          <span className={`tag ${vtuber.category === '개인세' ? 'tag-individual' : 'tag-company'}`}>#{vtuber.category}</span>
         </div>
-        <h1>{vtuber.vtubername}</h1>
+        <h1>
+          {vtuber.vtubername}
+          <button className="follow-button" onClick={handleFollow}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill={isFollowing ? "red" : "gray"}
+              width="24px"
+              height="24px"
+            >
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+          </button>
+        </h1>
         <div className="dates">
           <div className="date-box">
             <h3>데뷔일</h3>
