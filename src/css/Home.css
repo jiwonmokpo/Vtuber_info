@@ -256,6 +256,7 @@ body.fixed {
 .notbrithday {
   font-size: 16px;
   color: #ccc;
+  margin-left: 500px;
 }
 
 .today_button {

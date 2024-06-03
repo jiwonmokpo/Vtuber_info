@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useContext } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../App';
@@ -14,24 +14,36 @@ const VtuberDetail = () => {
   const [vtuber, setVtuber] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [showFullHeader, setShowFullHeader] = useState(false);
-  const headerRef = useRef(null);
+  const [latestVideos, setLatestVideos] = useState([]);
+  const [musicVideos, setMusicVideos] = useState([]);
+
+  const decodeHtmlEntity = (str) => {
+    const txt = document.createElement('textarea');
+    txt.innerHTML = str;
+    return txt.value;
+  };
 
   useEffect(() => {
     const fetchVtuber = async () => {
       try {
         const response = await axios.get(`http://localhost:5000/vtinfo/${id}`, { withCredentials: true });
         setVtuber(response.data);
-        // 팔로우 상태를 가져오는 부분 추가
         const followResponse = await axios.get('http://localhost:5000/follow_status', { withCredentials: true });
         const isFollowed = followResponse.data.includes(Number(id));
         setIsFollowing(isFollowed);
+        
+        const videoResponse = await axios.get(`http://localhost:5000/vtuber/${id}/latest-videos`);
+        setLatestVideos(videoResponse.data);
+
+        const musicVideoResponse = await axios.get(`http://localhost:5000/vtuber/${id}/music-videos`);
+        setMusicVideos(musicVideoResponse.data);
       } catch (error) {
         console.error('Error fetching Vtuber:', error);
       }
     };
 
     fetchVtuber();
-  }, [id]);
+  }, [id, auth.isAuthenticated]);
 
   const handleFollow = async () => {
     try {
@@ -40,7 +52,7 @@ const VtuberDetail = () => {
       } else {
         await axios.post('http://localhost:5000/follow', { vtuberId: id }, { withCredentials: true });
       }
-      // 팔로우 상태를 다시 가져오기
+
       const followResponse = await axios.get('http://localhost:5000/follow_status', { withCredentials: true });
       const isFollowed = followResponse.data.includes(Number(id));
       setIsFollowing(isFollowed);
@@ -51,11 +63,6 @@ const VtuberDetail = () => {
 
   const handleToggleHeader = () => {
     setShowFullHeader(!showFullHeader);
-    if (!showFullHeader) {
-      setTimeout(() => {
-        headerRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      }, 300); 
-    }
   };
 
   if (!vtuber) {
@@ -83,7 +90,7 @@ const VtuberDetail = () => {
   return (
     <div className="vtuber-detail-container">
       <div className="vtuber-header">
-        <div className={`header-image ${showFullHeader ? 'full' : 'half'}`} ref={headerRef}>
+        <div className={`header-image ${showFullHeader ? 'full' : 'half'}`}>
           <img src={`http://localhost:5000/uploads/${vtuber.header_image}`} alt={`${vtuber.vtubername} header`} />
           <button onClick={handleToggleHeader} className="toggle-button">
             {showFullHeader ? '간략히 보기' : '전체 보기'}
@@ -142,6 +149,32 @@ const VtuberDetail = () => {
               <p>바로가기</p>
             </a>
           </div>
+        </div>
+        <div className='VtdetailMedia'>미디어</div>
+        <div className="media">
+          {latestVideos.map((video, index) => (
+            video.snippet && video.snippet.thumbnails && video.snippet.thumbnails.medium ? (
+              <div className="video-box" key={video.id.videoId || index}>
+                <a href={`https://www.youtube.com/watch?v=${video.id.videoId}`} target="_blank" rel="noopener noreferrer">
+                  <img src={video.snippet.thumbnails.medium.url} alt={video.snippet.title} />
+                </a>
+                <p>{decodeHtmlEntity(video.snippet.title)}</p>
+              </div>
+            ) : null
+          ))}
+        </div>
+        <div className='VtdetailMusic'>음악</div>
+        <div className="music">
+          {musicVideos.map((video, index) => (
+            video.snippet && video.snippet.thumbnails && video.snippet.thumbnails.medium ? (
+              <div className="video-box" key={video.id.videoId || index}>
+                <a href={`https://www.youtube.com/watch?v=${video.snippet.resourceId.videoId}`} target="_blank" rel="noopener noreferrer">
+                  <img src={video.snippet.thumbnails.medium.url} alt={video.snippet.title} />
+                </a>
+                <p>{decodeHtmlEntity(video.snippet.title)}</p>
+              </div>
+            ) : null
+          ))}
         </div>
       </div>
     </div>
