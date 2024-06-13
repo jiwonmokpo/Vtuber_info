@@ -818,7 +818,7 @@
     }
   });
 
-  // vtinfo 정보를 가져오는 엔드포인트
+  // VTuber 정보를 가져오는 엔드포인트
   app.get('/vtinfo', async (req, res) => {
     try {
       const connection = await oracledb.getConnection(dbConfig);
@@ -1131,39 +1131,55 @@
   app.get('/random-vtubers', async (req, res) => {
     try {
       const connection = await oracledb.getConnection(dbConfig);
-      const result = await connection.execute(
-        `SELECT * FROM (
-          SELECT * FROM vtinfo
-          ORDER BY DBMS_RANDOM.RANDOM
-        ) WHERE ROWNUM <= 5`
-      );
+         // Query for "치지직" platform and debut date within 100 days
+    const chijijikQuery = `
+    SELECT * FROM (
+      SELECT * FROM vtinfo
+      WHERE platform = '치지직' AND debutdate >= SYSDATE - 100
+      ORDER BY DBMS_RANDOM.RANDOM
+    ) WHERE ROWNUM <= 3
+  `;
 
-      const vtubers = result.rows.map(row => ({
-        id: row[0],
-        category: row[1],
-        company: row[2],
-        vtubername: row[3],
-        gender: row[4],
-        age: row[5],
-        mbti: row[6],
-        platform: row[7],
-        role: row[8],
-        profile_image: row[9],
-        header_image: row[10],
-        birthday: row[11],
-        debutdate: row[12],
-        youtubelink: row[13],
-        platformlink: row[14],
-        xlink: row[15]
-      }));
+  // Query for "아프리카" platform and debut date within 100 days
+  const africaQuery = `
+    SELECT * FROM (
+      SELECT * FROM vtinfo
+      WHERE platform = '아프리카' AND debutdate >= SYSDATE - 100
+      ORDER BY DBMS_RANDOM.RANDOM
+    ) WHERE ROWNUM <= 2
+  `;
 
-      res.status(200).json(vtubers);
-      await connection.close();
-    } catch (err) {
-      console.error('Database error:', err);
-      res.status(500).json({ error: 'Error fetching random vtubers', details: err.message });
-    }
-  });
+  // Execute both queries
+  const chijijikResult = await connection.execute(chijijikQuery);
+  const africaResult = await connection.execute(africaQuery);
+
+  // Combine results
+  const vtubers = [...chijijikResult.rows, ...africaResult.rows].map(row => ({
+      id: row[0],
+      category: row[1],
+      company: row[2],
+      vtubername: row[3],
+      gender: row[4],
+      age: row[5],
+      mbti: row[6],
+      platform: row[7],
+      role: row[8],
+      profile_image: row[9],
+      header_image: row[10],
+      birthday: row[11],
+      debutdate: row[12],
+      youtubelink: row[13],
+      platformlink: row[14],
+      xlink: row[15]
+    }));
+
+  res.status(200).json(vtubers);
+  await connection.close();
+} catch (err) {
+  console.error('Database error:', err);
+  res.status(500).json({ error: 'Error fetching random vtubers', details: err.message });
+}
+});
 
   //MBTI 궁합도 점수
   const calculateMbtiCompatibility = (userMbti, vtuberMbti) => {

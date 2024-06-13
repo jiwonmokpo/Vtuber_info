@@ -126,6 +126,23 @@ h1 {
   object-fit: cover;
 }
 
+.channel_profile_is_live {
+  background-image: linear-gradient(var(--color-bg-01), var(--color-bg-01)), linear-gradient(180deg, #00ffa3 0, #027f80 100%);
+  position: relative;
+}
+
+.live-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: red;
+  color: white;
+  font-weight: bold;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
 .vtuber-info {
   display: flex;
   margin-bottom: 50px;
@@ -281,4 +298,21 @@ h1 {
 
 .vt-follow-button.active svg {
   fill: #f44336;
+}
+
+.channel_profile_is_live {
+  background-image: linear-gradient(var(--color-bg-01), var(--color-bg-01)), linear-gradient(180deg, #00ffa3 0, #027f80 100%);
+  position: relative;
+}
+
+.live-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: red;
+  color: white;
+  font-weight: bold;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 12px;
 }

@@ -20,7 +20,7 @@ import CompanyDetail from './board_vt/CompanyDetail';
 // CSS
 import './css/App.css';
 import userIcon from './image/user.png';
-import bannerImage from './image/banner.webp';
+import bannerImage from './image/banner.gif';
 
 export const AuthContext = createContext();
 

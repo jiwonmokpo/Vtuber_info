@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import Hangul from 'hangul-js';
 import '../css/VtSoloBoard.css';
 
 const VtSoloBoard = () => {
@@ -25,6 +26,7 @@ const VtSoloBoard = () => {
           return a.vtubername.localeCompare(b.vtubername, 'ko-KR');
         });
         setVtubers(sortedVtubers);
+        console.log('Fetched vtubers:', sortedVtubers); // 디버깅용 콘솔 출력
       } catch (error) {
         console.error('Error fetching vtubers:', error);
       }
@@ -34,6 +36,7 @@ const VtSoloBoard = () => {
       try {
         const response = await axios.get('http://localhost:5000/follow_status', { withCredentials: true });
         setFollowStatus(response.data);
+        console.log('Fetched follow status:', response.data); // 디버깅용 콘솔 출력
       } catch (error) {
         console.error('Error fetching follow status:', error);
       }
@@ -91,18 +94,111 @@ const VtSoloBoard = () => {
     }
   };
 
-  const filteredVtubers = vtubers
-    .filter(vtuber => 
-      vtuber.vtubername && vtuber.vtubername.toLowerCase().includes(search.toLowerCase())
-    )
-    .filter(vtuber => {
+  const getChosung = (str) => {
+    return Hangul.d(str).map(char => Hangul.isHangul(char) ? Hangul.d(char)[0] : char).join('');
+  };
+
+  const isValidChosungMatch = (searchChosung, targetChosung) => {
+    let searchIndex = 0;
+    let targetIndex = 0;
+
+    while (searchIndex < searchChosung.length && targetIndex < targetChosung.length) {
+      if (searchChosung[searchIndex] === targetChosung[targetIndex]) {
+        searchIndex++;
+      }
+      targetIndex++;
+    }
+
+    return searchIndex === searchChosung.length;
+  };
+
+  const calculateChosungMatch = (searchChosung, targetChosung) => {
+    let matchCount = 0;
+    let targetIndex = 0;
+
+    for (let i = 0; i < searchChosung.length; i++) {
+      const searchChar = searchChosung[i];
+      while (targetIndex < targetChosung.length && targetChosung[targetIndex] !== searchChar) {
+        targetIndex++;
+      }
+      if (targetIndex < targetChosung.length && targetChosung[targetIndex] === searchChar) {
+        matchCount++;
+        targetIndex++;
+      }
+    }
+    return matchCount / searchChosung.length;
+  };
+
+  const levenshteinDistance = (a, b) => {
+    const an = a ? a.length : 0;
+    const bn = b ? b.length : 0;
+    if (an === 0) {
+      return bn;
+    }
+    if (bn === 0) {
+      return an;
+    }
+    const matrix = Array(an + 1).fill(null).map(() => Array(bn + 1).fill(null));
+    for (let i = 0; i <= an; i += 1) {
+      matrix[i][0] = i;
+    }
+    for (let j = 0; j <= bn; j += 1) {
+      matrix[0][j] = j;
+    }
+    for (let i = 1; i <= an; i += 1) {
+      for (let j = 1; j <= bn; j += 1) {
+        const indicator = a[i - 1] === b[j - 1] ? 0 : 1;
+        matrix[i][j] = Math.min(
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1,
+          matrix[i - 1][j - 1] + indicator,
+        );
+      }
+    }
+    return matrix[an][bn];
+  };
+
+  const levenshteinSimilarity = (str1, str2) => {
+    const maxLength = Math.max(str1.length, str2.length);
+    const distance = levenshteinDistance(str1, str2);
+    return (maxLength - distance) / maxLength;
+  };
+
+  const searchVtubers = (vtubers) => {
+    if (!search) return vtubers;
+    const searchChosung = getChosung(search.toLowerCase());
+    return vtubers.map(vtuber => {
+      const vtuberChosung = getChosung(vtuber.vtubername.toLowerCase());
+
+      if (!isValidChosungMatch(searchChosung, vtuberChosung)) {
+        return { ...vtuber, similarity: 0 };
+      }
+
+      const chosungMatch = calculateChosungMatch(searchChosung, vtuberChosung);
+      const levenshteinSim = levenshteinSimilarity(searchChosung, vtuberChosung);
+      const combinedSimilarity = (chosungMatch * 0.9) + (levenshteinSim * 0.1);
+
+      return { ...vtuber, similarity: combinedSimilarity };
+    })
+    .filter(vtuber => vtuber.similarity > 0)
+    .sort((a, b) => {
+      if (a.similarity !== b.similarity) {
+        return b.similarity - a.similarity;
+      } else {
+        return a.vtubername.length - b.vtubername.length;
+      }
+    });
+  };
+
+  const filterVtubers = (vtubers) => {
+    return vtubers.filter(vtuber => {
       const { platform, category, gender, mbti } = appliedFilter;
       const extrovertMBTI = ['ESTP', 'ESTJ', 'ESFP', 'ESFJ', 'ENTP', 'ENTJ', 'ENFP', 'ENFJ'];
       const introvertMBTI = ['ISTP', 'ISTJ', 'ISFP', 'ISFJ', 'INTP', 'INTJ', 'INFP', 'INFJ'];
 
-      const mbtiMatch = mbti === '전체' || 
-                        (mbti === 'E' && extrovertMBTI.includes(vtuber.mbti)) || 
-                        (mbti === 'I' && introvertMBTI.includes(vtuber.mbti)) || 
+      const mbtiMatch = mbti === '전체' ||
+                        (mbti === 'E' && extrovertMBTI.includes(vtuber.mbti)) ||
+                        (mbti === 'I' && introvertMBTI.includes(vtuber.mbti)) ||
                         vtuber.mbti === mbti;
 
       return (
@@ -111,31 +207,43 @@ const VtSoloBoard = () => {
         (gender === '전체' || vtuber.gender === gender) &&
         mbtiMatch
       );
-    })
-    .filter(vtuber => {
-      if (!filter) return true;
+    });
+  };
+
+  const sortVtubers = (vtubers) => {
+    if (!filter) return vtubers;
+    const koreanCharRange = {
+      'ㄱ': /^[가-깋]/,
+      'ㄴ': /^[나-닣]/,
+      'ㄷ': /^[다-딯]/,
+      'ㄹ': /^[라-맇]/,
+      'ㅁ': /^[마-밓]/,
+      'ㅂ': /^[바-빟]/,
+      'ㅅ': /^[사-싷]/,
+      'ㅇ': /^[아-잏]/,
+      'ㅈ': /^[자-짛]/,
+      'ㅊ': /^[차-칳]/,
+      'ㅋ': /^[카-킿]/,
+      'ㅌ': /^[타-팋]/,
+      'ㅍ': /^[파-핗]/,
+      'ㅎ': /^[하-힣]/
+    };
+    return vtubers.filter(vtuber => {
       const name = vtuber.vtubername;
       if (filter === 'A-Z') {
         return /^[A-Za-z]/.test(name.charAt(0));
       }
-      const koreanCharRange = {
-        'ㄱ': /^[가-깋]/,
-        'ㄴ': /^[나-닣]/,
-        'ㄷ': /^[다-딯]/,
-        'ㄹ': /^[라-맇]/,
-        'ㅁ': /^[마-밓]/,
-        'ㅂ': /^[바-빟]/,
-        'ㅅ': /^[사-싷]/,
-        'ㅇ': /^[아-잏]/,
-        'ㅈ': /^[자-짛]/,
-        'ㅊ': /^[차-칳]/,
-        'ㅋ': /^[카-킿]/,
-        'ㅌ': /^[타-팋]/,
-        'ㅍ': /^[파-핗]/,
-        'ㅎ': /^[하-힣]/
-      };
       return koreanCharRange[filter] ? koreanCharRange[filter].test(name.charAt(0)) : true;
     });
+  };
+
+  const combinedVtubers = () => {
+    const searched = searchVtubers(vtubers);
+    const filtered = filterVtubers(searched);
+    return sortVtubers(filtered);
+  };
+
+  const filteredVtubers = combinedVtubers();
 
   const mbtiOptions = mbtiType ? (
     mbtiType === 'E' ? (
@@ -189,7 +297,10 @@ const VtSoloBoard = () => {
         {filteredVtubers.map(vtuber => (
           <div className="vtuber-card-container" key={vtuber.id}>
             <Link to={`/vtuber/${vtuber.id}`} className="vtuber-card">
-              <img src={`http://localhost:5000/uploads/${vtuber.profile_image}`} alt={vtuber.vtubername} />
+              <div className={`vtuber-image-container ${vtuber.openLive ? 'channel_profile_is_live' : ''}`}>
+                <img src={`http://localhost:5000/uploads/${vtuber.profile_image}`} alt={vtuber.vtubername} />
+                {vtuber.openLive && <span className="live-badge">LIVE</span>}
+              </div>
               <div className="vtuber-info">
                 {vtuber.category === '기업세' && <p className="company">{vtuber.company}</p>}
                 <h2>{vtuber.vtubername}</h2>
@@ -239,7 +350,7 @@ const VtSoloBoard = () => {
           </div>
           <div className="filter-section">
             <h4>성별</h4>
-            {['전체', '남성', '여성'].map(gender => (
+            {['전체', '여성', '남성'].map(gender => (
               <button
                 key={gender}
                 className={tempFilter.gender === gender ? 'vtselected' : ''}
@@ -251,20 +362,22 @@ const VtSoloBoard = () => {
           </div>
           <div className="filter-section">
             <h4>MBTI</h4>
-            <div className="mbti-buttons">
-              <button className={tempFilter.mbti === '전체' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', '전체')}>전체</button>
-              <button className={tempFilter.mbti === 'E' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', 'E')}>E</button>
-              <button className={tempFilter.mbti === 'I' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', 'I')}>I</button>
+            <div className="mbti-options">
+              <button className={tempFilter.mbti === '전체' ? 'vtselected' : ''} onClick={() => handleTempFilterChange('mbti', '전체')} >
+                전체
+              </button>
+              <button className={mbtiType === 'E' ? 'vtselected' : ''} onClick={() => setMbtiType('E')}>
+                외향형
+              </button>
+              <button className={mbtiType === 'I' ? 'vtselected' : ''} onClick={() => setMbtiType('I')}>
+                내향형
+              </button>
+              {mbtiOptions}
             </div>
-            {mbtiType && (
-              <div className="mbti-buttons-expanded">
-                {mbtiOptions}
-              </div>
-            )}
           </div>
           <div className="filter-buttons">
-            <button onClick={resetFilters} className="reset-button">🔄 되돌리기</button>
-            <button onClick={applyFilters} className="apply-button">적용하기</button>
+            <button className="apply-filter-button" onClick={applyFilters}>적용</button>
+            <button className="reset-filter-button" onClick={resetFilters}>초기화</button>
           </div>
         </div>
       )}

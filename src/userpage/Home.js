@@ -140,7 +140,7 @@ const Home = () => {
     <div className="home-container">
       <div className="home-vtuber-sections">
         <div className="home-vtuber-section">
-          <h2>볼만한 버튜버</h2>
+          <h2>최근 데뷔한 버튜버</h2>
           <div className="home-vtuber-list">
             {randomVtubers.map(vtuber => (
               <Link to={`/vtuber/${vtuber.id}`} key={vtuber.id} className="home-vtuber-card">
